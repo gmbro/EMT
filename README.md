@@ -21,4 +21,5 @@ Import this repository into Vercel. The project uses `npm run build` and publish
 - Input can come from the microphone or a user-selected browser meeting tab's shared audio. The tab audio option requires browser screen-sharing permission and support for recognizing an audio track; captured video is not read or sent anywhere. Select Korean or English input before listening.
 - The app makes no application-level network request containing audio, transcript, translation, or generated replies. The browser may download its required language and AI models on first setup; that download does not include meeting content.
 - The user starts the first model download with one click. After Chrome has cached all required models, the app prepares them automatically on later visits.
+- The app stores only a local flag that model setup completed; meeting content is never stored by the app.
 - Browser API and hardware support is limited and changes over time. The app disables listening unless all required local APIs are available. Accuracy, speed, and Korean reply-generation quality depend on browser models and device performance.
