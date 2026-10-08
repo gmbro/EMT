@@ -247,7 +247,7 @@ function App() {
   const copy = async text => { try { await navigator.clipboard.writeText(text); setNotice('복사했어요'); setTimeout(() => setNotice(''), 1800); } catch { setNotice('복사할 수 없어요'); setTimeout(() => setNotice(''), 1800); } };
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark"><Languages size={19}/></span><span>live<span className="brand-accent">speak</span></span></a><div className="top-actions"><button className="subtle-button" onClick={() => setSettings(true)}><Settings2 size={17}/><span>설정</span></button><span className="profile">나</span></div></header>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark"><Languages size={19}/></span><span>석변의 레고라 뿌시기</span></a><div className="top-actions"><button className="subtle-button" onClick={() => setSettings(true)}><Settings2 size={17}/><span>설정</span></button><span className="profile">나</span></div></header>
     <main className="layout">
       <section className="intro"><div className="eyebrow"><span className="pulse-dot"/> ON-DEVICE MEETING ASSISTANT</div><h1>회의 음성은 기기에,<br/><span>영어도 기기 안에서.</span></h1><p>회의 음성·전사·번역은 외부 서버로 보내지 않습니다.<br className="mobile-break"/> 처음 한 번 Chrome에서 기기 모델을 준비해 주세요.</p></section>
       <section className="guide-panel" aria-labelledby="guide-title">
@@ -274,7 +274,7 @@ function App() {
     </main>
     {notice&&<div className="toast">{notice}</div>}
     {settings&&<div className="modal-backdrop" onClick={() => setSettings(false)}><div className="settings-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="section-kicker">PREFERENCES</span><h2>회의 설정</h2></div><button className="icon-button" onClick={() => setSettings(false)}><X size={18}/></button></div><label className="setting-row"><span><strong>대화 상황</strong><small>답변 제안의 말투에 반영</small></span><select value={mode} onChange={e=>setMode(e.target.value)}>{['비즈니스','일상 대화','면접','여행'].map(m=><option key={m}>{m}</option>)}</select></label><div className="setting-row"><span><strong>기기 내 모델</strong><small>음성 인식 · 번역 · 답변 제안</small></span><span className="setting-value">{modelsReady?'준비 완료':checkingLocal?'지원 확인 중':speechAvailable&&translationAvailable&&assistantAvailable?'준비 가능':'이 브라우저에서 미지원'}</span></div><div className="modal-hint">최초 사용 시 Chrome이 필요한 음성·번역 모델을 내려받습니다. 회의 음성과 전사 내용은 로컬 모델 API로만 처리합니다. 답변 생성 모델의 한국어 지원은 기기와 브라우저에 따라 제한될 수 있습니다.</div></div></div>}
-    <footer className="footer"><span>LIVE SPEAK</span><span>자연스럽게, 당신답게.</span></footer>
+    <footer className="footer"><span>석변의 레고라 뿌시기</span><span>자연스럽게, 당신답게.</span></footer>
   </div>;
 }
 
