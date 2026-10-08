@@ -1,6 +1,6 @@
 # LiveSpeak
 
-A Korean-to-English live meeting assistant UI.
+A privacy-first Korean-to-English meeting assistant prototype.
 
 ## Development
 
@@ -13,10 +13,9 @@ npm run dev
 
 Import this repository into Vercel. The project uses `npm run build` and publishes `dist/`.
 
-## Environment variables
-
-Vercel project `emt` currently has a secret named `google_api` configured for Production and Preview. Its value is never included in this repository or client bundle. The current static client does not use it.
-
 ## Privacy and speech support
 
-The browser SpeechRecognition API has browser-specific behavior and may use a remote recognition service. Do not describe microphone input as on-device/private unless the selected browser implementation is verified to process it locally. The current interface is a prototype; translation and suggested replies are sample content, not connected to a translation model.
+- The client never calls the configured Vercel `google_api` secret.
+- Speech recognition starts only when the browser exposes the on-device `SpeechRecognition` APIs, the Korean on-device pack is available, and `processLocally` is set to `true`.
+- The current UI does not provide translation or AI reply generation. Those require a local model running on the user's device; no remote fallback is allowed.
+- Browser on-device speech recognition support is experimental and browser-dependent. A model pack may require a one-time download before use.
