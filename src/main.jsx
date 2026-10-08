@@ -249,7 +249,16 @@ function App() {
   return <div className="app-shell">
     <header className="topbar"><a className="brand" href="#"><span className="brand-mark"><Languages size={19}/></span><span>live<span className="brand-accent">speak</span></span></a><div className="top-actions"><button className="subtle-button" onClick={() => setSettings(true)}><Settings2 size={17}/><span>설정</span></button><span className="profile">나</span></div></header>
     <main className="layout">
-      <section className="intro"><div className="eyebrow"><span className="pulse-dot"/> ON-DEVICE MEETING ASSISTANT</div><h1>회의 음성은 기기에,<br/><span>영어도 기기 안에서.</span></h1><p>음성과 전사 내용을 외부 서버로 보내지 않아요.<br className="mobile-break"/> 첫 모델 준비 후엔 바로 시작합니다.</p></section>
+      <section className="intro"><div className="eyebrow"><span className="pulse-dot"/> ON-DEVICE MEETING ASSISTANT</div><h1>회의 음성은 기기에,<br/><span>영어도 기기 안에서.</span></h1><p>회의 음성·전사·번역은 외부 서버로 보내지 않습니다.<br className="mobile-break"/> 처음 한 번 Chrome에서 기기 모델을 준비해 주세요.</p></section>
+      <section className="guide-panel" aria-labelledby="guide-title">
+        <div className="guide-heading"><ShieldCheck size={16}/><h2 id="guide-title">사용 방법과 보안 안내</h2><span>3단계</span></div>
+        <ol className="guide-steps">
+          <li><span className="guide-number">1</span><div><strong>기기 모델 준비</strong><p>Chrome 데스크톱에서 ‘모델 다운로드’를 눌러주세요. 모델 파일은 처음 한 번 내려받습니다.</p></div></li>
+          <li><span className="guide-number">2</span><div><strong>입력과 언어 선택</strong><p>마이크 또는 회의 탭 오디오를 고르고 말하는 언어를 선택하세요. 선택한 입력 권한을 허용해 주세요.</p></div></li>
+          <li><span className="guide-number">3</span><div><strong>듣기 시작</strong><p>마이크 버튼을 누르면 전사·번역·답변 제안이 표시됩니다. 회의 내용은 기기 안에서 처리돼요.</p></div></li>
+        </ol>
+        <p className="guide-security"><ShieldCheck size={13}/> 모델 다운로드를 제외하면 회의 음성·전사·번역을 외부로 전송하지 않아요. 탭 공유 시 오디오만 인식하며 영상은 처리하지 않습니다.</p>
+      </section>
       <section className="workspace">
         <div className="session-head"><div><span className="section-kicker">LIVE SESSION</span><div className="session-title">{inputLanguage==='ko-KR'?'한국어':'English'} <span className="arrow">→</span> {inputLanguage==='ko-KR'?'English':'한국어'}</div></div><div className="head-controls"><div className="mode-wrap"><button className="mode-button" onClick={() => setShowModes(v => !v)}><span className="mode-icon"><Sparkles size={14}/></span>{mode}<ChevronDown size={15}/></button>{showModes && <div className="mode-menu">{['비즈니스','일상 대화','면접','여행'].map(m => <button key={m} onClick={() => {setMode(m);setShowModes(false)}}>{m}{mode===m&&<Check size={15}/>}</button>)}</div>}</div><button className="icon-button" title="새 대화" onClick={clearSession}><RotateCcw size={17}/></button></div></div>
         <div className="input-options"><div className="segmented-control" aria-label="음성 입력">{[['microphone','마이크'],['meeting-tab','회의 탭 오디오']].map(([value,label])=><button key={value} className={inputSource===value?'selected':''} onClick={() => chooseInputSource(value)}>{label}</button>)}</div><div className="language-toggle" aria-label="말하는 언어">{[['ko-KR','한국어'],['en-US','English']].map(([value,label])=><button key={value} className={inputLanguage===value?'selected':''} onClick={() => chooseLanguage(value)}>{label}</button>)}</div></div>
