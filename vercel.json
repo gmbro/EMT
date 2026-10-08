@@ -2,5 +2,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "on-device-speech-recognition=(self)" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    }
+  ]
 }
