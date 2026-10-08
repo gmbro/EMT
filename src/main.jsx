@@ -20,6 +20,7 @@ function App() {
   const [sessionResetting, setSessionResetting] = useState(false);
   const [translationAvailable, setTranslationAvailable] = useState(false);
   const [assistantAvailable, setAssistantAvailable] = useState(false);
+  const [modelPacksCached, setModelPacksCached] = useState(false);
   const [modelProgress, setModelProgress] = useState(0);
   const [translated, setTranslated] = useState('');
   const [translationBusy, setTranslationBusy] = useState(false);
@@ -45,6 +46,7 @@ function App() {
   const committedEnglishRef = useRef('');
   const committedTranslationRef = useRef('');
   const finalTranslationQueue = useRef(Promise.resolve());
+  const autoPrepareStarted = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -70,9 +72,17 @@ function App() {
       if (!active) return;
       setTranslationAvailable(koToEn !== 'unavailable' && enToKo !== 'unavailable');
       setAssistantAvailable(assistant !== 'unavailable');
+      setModelPacksCached(koToEn === 'available' && enToKo === 'available' && assistant === 'available');
     }).catch(() => {});
     return () => { active = false; };
   }, [TranslatorAPI, LanguageModelAPI]);
+
+  useEffect(() => {
+    if (localAvailable && modelPacksCached && !modelsReady && !installingLocal && !autoPrepareStarted.current) {
+      autoPrepareStarted.current = true;
+      initializeModels();
+    }
+  }, [localAvailable, modelPacksCached, modelsReady, installingLocal]);
 
   useEffect(() => {
     if (!listening) { clearInterval(timer.current); return; }
@@ -234,13 +244,13 @@ function App() {
   return <div className="app-shell">
     <header className="topbar"><a className="brand" href="#"><span className="brand-mark"><Languages size={19}/></span><span>live<span className="brand-accent">speak</span></span></a><div className="top-actions"><button className="subtle-button" onClick={() => setSettings(true)}><Settings2 size={17}/><span>설정</span></button><span className="profile">나</span></div></header>
     <main className="layout">
-      <section className="intro"><div className="eyebrow"><span className="pulse-dot"/> ON-DEVICE MEETING ASSISTANT</div><h1>회의 음성은 기기에,<br/><span>영어도 기기 안에서.</span></h1><p>음성과 전사 내용을 외부 서버로 보내지 않아요.<br className="mobile-break"/> 모델은 내려받고 대화는 기기에서 처리합니다.</p></section>
+      <section className="intro"><div className="eyebrow"><span className="pulse-dot"/> ON-DEVICE MEETING ASSISTANT</div><h1>회의 음성은 기기에,<br/><span>영어도 기기 안에서.</span></h1><p>음성과 전사 내용을 외부 서버로 보내지 않아요.<br className="mobile-break"/> 첫 모델 준비 후엔 바로 시작합니다.</p></section>
       <section className="workspace">
         <div className="session-head"><div><span className="section-kicker">LIVE SESSION</span><div className="session-title">{inputLanguage==='ko-KR'?'한국어':'English'} <span className="arrow">→</span> {inputLanguage==='ko-KR'?'English':'한국어'}</div></div><div className="head-controls"><div className="mode-wrap"><button className="mode-button" onClick={() => setShowModes(v => !v)}><span className="mode-icon"><Sparkles size={14}/></span>{mode}<ChevronDown size={15}/></button>{showModes && <div className="mode-menu">{['비즈니스','일상 대화','면접','여행'].map(m => <button key={m} onClick={() => {setMode(m);setShowModes(false)}}>{m}{mode===m&&<Check size={15}/>}</button>)}</div>}</div><button className="icon-button" title="새 대화" onClick={clearSession}><RotateCcw size={17}/></button></div></div>
         <div className="input-options"><div className="segmented-control" aria-label="음성 입력">{[['microphone','마이크'],['meeting-tab','회의 탭 오디오']].map(([value,label])=><button key={value} className={inputSource===value?'selected':''} onClick={() => chooseInputSource(value)}>{label}</button>)}</div><div className="language-toggle" aria-label="말하는 언어">{[['ko-KR','한국어'],['en-US','English']].map(([value,label])=><button key={value} className={inputLanguage===value?'selected':''} onClick={() => chooseLanguage(value)}>{label}</button>)}</div></div>
         {inputSource==='meeting-tab'&&<p className="meeting-source-note">시작 후 회의 탭과 ‘탭 오디오 공유’를 선택해 주세요. 영상은 처리하지 않습니다.</p>}
         <div className="record-area"><div className={`record-orb ${listening?'recording':''}`}><div className="orb-ring ring-one"/><div className="orb-ring ring-two"/><button className="mic-button" onClick={listening?stopListening:startListening} aria-label={listening?'듣기 멈추기':'듣기 시작'} disabled={!modelsReady||sessionResetting}>{listening?<MicOff size={25}/>:<Mic size={25}/>}</button></div><div className="record-copy"><strong>{listening?'기기 안에서 듣고 있어요':sessionResetting?'새 대화 준비 중':modelsReady?'눌러서 말해보세요':checkingLocal?'로컬 AI 기능 확인 중':speechAvailable&&translationAvailable&&assistantAvailable?'로컬 모델을 준비해 주세요':'이 브라우저는 로컬 AI 기능을 지원하지 않아요'}</strong><span>{listening?`기기 내 실시간 처리 · ${formatTime(elapsed)}`:modelsReady?'전사·번역·답변 모두 기기 안에서 처리':'모델 최초 준비 시 브라우저가 언어 모델을 내려받습니다'}</span></div><div className={`live-badge ${listening?'is-live':''}`}><span/>{listening?'LOCAL':'LOCAL ONLY'}</div></div>
-        {!modelsReady&&!listening&&<div className="local-model-panel"><div className="local-model-icon"><ShieldCheck size={17}/></div><div className="local-model-copy"><strong>기기 내 회의 모델</strong><span>{speechAvailable&&translationAvailable&&assistantAvailable?'한국어·영어 음성 인식과 번역, 답변 생성 모델을 준비합니다. 모델은 내려받지만 회의 음성과 텍스트는 기기 밖으로 보내지 않습니다.':'Chrome 데스크톱과 지원 기기가 필요합니다. 일부 기능이 이 브라우저에서 감지되지 않았어요.'}{installingLocal&&` 준비 진행률 ${modelProgress}%`}</span>{modelError&&<span className="model-error">{modelError}</span>}</div><button className="install-button" onClick={initializeModels} disabled={installingLocal||!(speechAvailable&&translationAvailable&&assistantAvailable)}>{installingLocal?<span className="spinner"/>:<Download size={14}/>} {installingLocal?'준비 중':'로컬 모델 준비'}</button></div>}
+        {!modelsReady&&!listening&&<div className="local-model-panel"><div className="local-model-icon"><ShieldCheck size={17}/></div><div className="local-model-copy"><strong>{modelPacksCached&&localAvailable?'기기 모델 불러오는 중':'한국어·영어 모델 다운로드'}</strong><span>{speechAvailable&&translationAvailable&&assistantAvailable?'한국어·영어 음성 인식, 번역과 답변 모델을 Chrome에 준비합니다. 다운로드 뒤 회의 음성과 텍스트는 기기에서만 처리합니다.': 'Chrome 데스크톱과 지원 기기가 필요합니다. 일부 로컬 AI 기능이 이 브라우저에서 지원되지 않아요.'}{installingLocal&&` 준비 진행률 ${modelProgress}%`}</span>{modelError&&<span className="model-error">{modelError}</span>}</div><button className="install-button" onClick={initializeModels} disabled={installingLocal||!(speechAvailable&&translationAvailable&&assistantAvailable)}>{installingLocal?<span className="spinner"/>:<Download size={14}/>} {installingLocal?'다운로드 중':modelPacksCached&&localAvailable?'불러오는 중':'모델 다운로드'}</button></div>}
         <div className="transcript-card"><div className="card-label"><span className="label-icon"><Headphones size={15}/></span><span>내가 말한 내용</span>{listening&&<span className="listening-label"><i/> 듣는 중</span>}{(heard||interim)&&<button className="mini-action" onClick={() => copy(heard+(interim?` ${interim}`:''))}><Copy size={14}/></button>}</div><div className={`transcript-text ${!heard&&!interim?'placeholder':''}`}>{heard||(!interim?'여기에 인식된 문장이 표시돼요':'')}{interim&&<span className="interim">{heard?' ':''}{interim}</span>}</div></div>
         <div className={`translation-card ${translated?'has-result':''}`}><div className="card-label"><span className="translation-symbol">文</span><span>영어 번역</span>{translationBusy&&<LoaderCircle className="loading-icon" size={13}/>}<span className="quality-tag"><span/>기기 내 번역</span>{translated&&<button className="mini-action" onClick={() => copy(translated)}><Copy size={14}/></button>}</div><div className={`translation-text ${!translated?'placeholder':''}`}>{translated||'말하면 영어 번역이 여기에 표시돼요'}{interim&&translatedKo&&<small className="back-translation">한국어 확인: {translatedKo}</small>}</div></div>
         <div className="suggestion-section"><div className="suggestion-heading"><div><span className="section-kicker">NEXT, YOU CAN SAY</span><h2>이렇게 답해보세요<span className="sparkle">✦</span></h2></div><span className="ai-chip"><Cpu size={13}/> 기기 내 AI</span></div><div className="reply-list">{replies.length?replies.map((reply,index)=><button className="reply-card" key={`${index}-${reply.en}`} onClick={() => copy(reply.en)}><span className="reply-number">0{index+1}</span><span className="reply-content"><strong>{reply.en}</strong><span>{reply.ko}</span></span><span className="reply-copy"><Copy size={15}/></span></button>):<div className="reply-card empty-reply"><span className="reply-number">01</span><span className="reply-content"><strong>{replyBusy?'회의 맥락을 보고 답변을 만들고 있어요':'전사된 내용에 맞는 답변을 여기에 제안해요'}</strong><span>{replyBusy?'답변 생성도 기기 안에서 처리 중입니다':'말을 마치면 다음에 할 수 있는 영어 답변을 보여드려요'}</span></span></div>}</div><p className="suggestion-note"><span>ⓘ</span> 번역된 회의 맥락을 바탕으로 한 로컬 AI 제안입니다</p></div>
