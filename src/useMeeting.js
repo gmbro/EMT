@@ -216,9 +216,13 @@ export function useMeeting() {
       context = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       const audio = await context.decodeAudioData(await response.arrayBuffer());
       if (session !== epoch.current || token !== startToken.current) return;
+      // Match a person waiting for the mic, speaking, then pausing. Padding
+      // lets the graph and VAD preroll settle before the first consonant.
+      const fixture = context.createBuffer(1, audio.length + 24000, 16000);
+      fixture.copyToChannel(audio.getChannelData(0), 0, 8000);
       // Use the live worklet/VAD/queue without a cross-context MediaStream
       // roundtrip, which would unnecessarily resample the 16 kHz fixture.
-      sampleCapture = await createAudioCapture(null, { audioBuffer: audio, onSegment: segment => {
+      sampleCapture = await createAudioCapture(null, { audioBuffer: fixture, onSegment: segment => {
         if (session === epoch.current && token === startToken.current) enqueue({ ...segment, sample: true });
       }, onError: failure => { if (session === epoch.current) setError(failure.message); } });
       if (session !== epoch.current || token !== startToken.current) return;
