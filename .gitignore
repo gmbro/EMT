@@ -5,3 +5,6 @@ dist/
 !.env.example
 .vercel/
 .DS_Store
+.model-cache/
+public/models/
+public/runtime/

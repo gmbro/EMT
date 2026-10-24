@@ -1,25 +1,45 @@
-# LiveSpeak
+# 석변의 하비 뿌시기
 
-A privacy-first Korean-to-English meeting assistant prototype.
+한국어 ↔ 영어 현장 통역 웹 앱입니다. 회의 음성, 전사, 번역, 답변은 브라우저의 기기 내 모델에서 처리하며 서버 추론 API를 호출하지 않습니다.
 
-## Development
+## 시작하기
+
+1. 말하는 언어와 마이크 또는 회의 탭 오디오를 선택합니다.
+2. **통역 준비**를 누릅니다. 지원되는 브라우저 내장 모델을 먼저 사용하고, 없으면 같은 사이트에 배포한 호환 모델을 다운로드합니다.
+3. 마이크를 누르고 권한을 허용합니다. 잠깐 말을 쉬거나 연속 발화가 6초에 도달하면 문장 단위로 인식·번역합니다.
+
+**예제 음성으로 확인**은 마이크 권한 없이 실제 기기 내 음성 인식과 번역을 실행합니다. 예제는 합성한 한국어·영어 음성이며 결과와 처리 시간을 화면에 표시합니다. 회의 전 사용할 기기에서 확인하세요. 현장 소음·발화·기기 성능에 따라 정확도와 지연이 달라집니다.
+
+## 기기 모델과 지원
+
+- 음성: 선택한 언어에 대해 로컬 SpeechRecognition을 확인합니다. `available()`과 `install()`에 같은 품질 조건을 사용합니다. 미지원 또는 제한 시간 내 설치 실패 시 양자화된 Whisper Base를 사용합니다.
+- 번역: 로컬 Translator API를 우선 사용합니다. 없으면 한국어→영어는 OPUS-MT, 영어→한국어는 M2M100을 기기에서 실행합니다. M2M100이 준비되면 양방향에 재사용합니다.
+- 호환 모델은 WebAssembly 워커에서 실행합니다. Chrome 전용 AI API가 없는 브라우저에도 이 경로를 제공합니다. **설정 → 호환 모델 사용**으로 강제할 수 있습니다. 기기 메모리가 부족하면 모델 준비나 실행이 실패할 수 있으며, 모든 휴대폰의 속도나 동작을 보장하지 않습니다.
+- 처음 호환 모델을 사용할 때 한국어→영어 약 233MB, 영어→한국어 약 756MB를 다운로드합니다. 브라우저 캐시가 유지되면 재사용합니다. 현장에 가기 전에 Wi-Fi에서 준비하세요.
+- 브라우저 LanguageModel의 자동 답변 제안은 선택 기능이며 통역 시작 조건이 아닙니다. 지원하지 않으면 한국어 답변을 직접 입력해 영어로 번역할 수 있습니다.
+- 처리 대기가 쌓이면 듣기를 멈추고 이미 받은 문장을 처리합니다. 쌓인 음성을 조용히 버리지 않습니다.
+
+## 개인정보와 보안
+
+- 앱은 Vercel의 `google_api`를 사용하거나 클라이언트에 포함하지 않습니다.
+- 브라우저 로컬 SpeechRecognition은 `processLocally=true`를 실제 지원하는 인스턴스에만 사용합니다. 서버 인식으로 전환하지 않습니다.
+- 모델과 ONNX/WASM 실행 파일을 동일 사이트에서 정적 GET으로 받습니다. 콘텐츠 보안 정책의 `connect-src 'self'`를 유지합니다. 서버 추론, 분석 SDK, 전사 전송, 음성 업로드 경로가 없습니다.
+- 음성과 대화 내용은 이 탭의 메모리에만 보관합니다. 새로고침·내용 지우기로 사라집니다. 브라우저에는 모델 파일만 캐시합니다.
+- 탭 오디오는 사용자가 선택한 MediaStream에서 인식합니다. 캡처한 영상 프레임을 읽거나 저장하지 않습니다. 모바일 브라우저는 탭 오디오 공유를 지원하지 않을 수 있습니다.
+- COOP/COEP를 적용해 지원 기기에서는 WASM의 최대 4개 스레드를 사용합니다. 불가능한 경우 1개 스레드로 실행합니다.
+
+## 개발과 배포
 
 ```sh
 npm install
+npm run prepare:models
 npm run dev
+npm test
+npm run build
 ```
 
-## Deployment
+`prepare:models`는 고정 리비전의 공개 모델을 받고 파일 크기와 SHA-256을 검증한 뒤 `public/models/`, `public/runtime/`을 만듭니다. 최초 약 879MB를 다운로드합니다. 원본 가중치와 캐시는 Git에 넣지 않습니다. Vercel은 빌드 시 같은 스크립트를 실행한 뒤 `dist/`를 정적으로 배포합니다. 모델 파일 다운로드 실패나 무결성 불일치 시 배포 빌드를 실패시킵니다.
 
-Import this repository into Vercel. The project uses `npm run build` and publishes `dist/`.
+`node scripts/prepare-models.mjs --verify-only`로 모델과 설치된 런타임의 무결성을 다시 확인할 수 있습니다. 테스트는 리샘플링, 음성 구간 분리, 정지 시 마지막 구간 유지, 선택 언어별 로컬 음성 설치 조건과 서버 전환 방지를 검사합니다. 모델 실추론과 마이크·브라우저 지원은 대상 기기에서 별도로 확인해야 합니다.
 
-## Privacy and speech support
-
-- The client never calls the configured Vercel `google_api` secret and does not use a translation or AI backend.
-- Speech recognition starts only when the browser exposes on-device `SpeechRecognition`, both Korean and English packs are available, and `processLocally` is set to `true`.
-- Translation uses the browser's on-device Translator API for Korean-to-English and English-to-Korean. Reply suggestions use the browser's on-device `LanguageModel` API with English-only context, then translate suggested replies locally to Korean.
-- Input can come from the microphone or a user-selected browser meeting tab's shared audio. The tab audio option requires browser screen-sharing permission and support for recognizing an audio track; captured video is not read or sent anywhere. Select Korean or English input before listening.
-- The app makes no application-level network request containing audio, transcript, translation, or generated replies. The browser may download its required language and AI models on first setup; that download does not include meeting content.
-- The user starts the first model download with one click. After Chrome has cached all required models, the app prepares them automatically on later visits.
-- The app stores only a local flag that model setup completed; meeting content is never stored by the app.
-- Browser API and hardware support is limited and changes over time. The app disables listening unless all required local APIs are available. Accuracy, speed, and Korean reply-generation quality depend on browser models and device performance.
+모델 고정 리비전과 라이선스: [public/model-licenses.md](public/model-licenses.md)
