@@ -83,7 +83,7 @@ async function prepareRuntime() {
   const ortDist = dirname(transformersRequire.resolve('onnxruntime-web'));
   const runtimeRoot = join(root, 'public', 'runtime');
   if (!verifyOnly) await mkdir(runtimeRoot, { recursive: true });
-  const files = ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm'];
+  const files = ['ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm'];
   for (const name of files) {
     let source = join(ortDist, name);
     try { await stat(source); }
@@ -101,7 +101,10 @@ async function prepareRuntime() {
     }
   }
   const packageData = JSON.parse(await readFile(join(ortDist, '..', 'package.json'), 'utf8'));
-  if (!verifyOnly) await writeFile(join(runtimeRoot, 'version.json'), JSON.stringify({ onnxruntime: packageData.version }) + '\n');
+  if (!verifyOnly) {
+    await writeFile(join(runtimeRoot, 'version.json'), JSON.stringify({ onnxruntime: packageData.version, build: 'asyncify' }) + '\n');
+    for (const name of ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm']) await rm(join(runtimeRoot, name), { force: true });
+  }
 }
 
 const queue = Object.entries(MODEL_CATALOG).flatMap(([key, model]) => MODEL_ASSETS[key].map(asset => ({ model, asset })));

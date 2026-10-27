@@ -20,6 +20,27 @@ export const MODEL_CATALOG = Object.freeze({
     "localId": "m2m100-9c374f0b",
     "label": "영어 ↔ 한국어 번역 (M2M100)",
     "bytes": 646113002
+  },
+  "speechQuality": {
+    "id": "onnx-community/whisper-small",
+    "revision": "36050c46d777d46dc4b5f43f6d90574fc38f8732",
+    "localId": "whisper-small-36050c46",
+    "label": "고정밀 한국어·영어 음성 인식 (Whisper Small)",
+    "bytes": 253477189,
+    "downloadBytes": {
+      "wasm": 253477189
+    }
+  },
+  "speechTurbo": {
+    "id": "onnx-community/whisper-large-v3-turbo",
+    "revision": "360ebcde2559d60bb474678be3c1de9ef347d01a",
+    "localId": "whisper-turbo-360ebcde",
+    "label": "고정밀 한국어·영어 음성 인식 (Whisper Large v3 Turbo)",
+    "bytes": 763479789,
+    "downloadBytes": {
+      "webgpu": 763479789,
+      "wasm": 763479789
+    }
   }
 });
 
@@ -214,6 +235,150 @@ export const MODEL_ASSETS = Object.freeze({
       "path": "vocab.json",
       "bytes": 3708092,
       "sha256": "b6e77e474aeea8f441363aca7614317c06381f3eacfe10fb9856d5081d1074cc"
+    }
+  ],
+  "speechQuality": [
+    {
+      "path": "README.md",
+      "bytes": 533,
+      "sha256": "32beef908082737f4f48dc6cdbbf7774667a7e48740ce6bf0f686d37e4cfab81"
+    },
+    {
+      "path": "added_tokens.json",
+      "bytes": 34604,
+      "sha256": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1"
+    },
+    {
+      "path": "config.json",
+      "bytes": 2227,
+      "sha256": "457854d452f17661e197d74aee12b8e74fb75ba30ebfaa7426d0d61ea1e08a18"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 3893,
+      "sha256": "f538b28220c6a6d6f1af1458d4141cacb4ef4963df3de98a19490440c412ddf0"
+    },
+    {
+      "path": "merges.txt",
+      "bytes": 493869,
+      "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6"
+    },
+    {
+      "path": "normalizer.json",
+      "bytes": 52666,
+      "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd"
+    },
+    {
+      "path": "onnx/decoder_model_merged_quantized.onnx",
+      "bytes": 156750845,
+      "sha256": "ec07c3cbb64172c39791e26ee870a65ac22b458c36722bfe2776b3dbf741e0c9"
+    },
+    {
+      "path": "onnx/encoder_model_quantized.onnx",
+      "bytes": 92326160,
+      "sha256": "a43a83f3c5361cd591cfa7c36f14b43cf7cb22f47a415cc14a8d557be800fa92"
+    },
+    {
+      "path": "preprocessor_config.json",
+      "bytes": 339,
+      "sha256": "a6a76d28c93edb273669eb9e0b0636a2bddbb1272c3261e47b7ca6dfdbac1b8d"
+    },
+    {
+      "path": "quantize_config.json",
+      "bytes": 10126,
+      "sha256": "6e0e27f293a5c17ff2ca8046f06079c0120aa2ede6456faac8ec4b3203471a55"
+    },
+    {
+      "path": "special_tokens_map.json",
+      "bytes": 2194,
+      "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 2480466,
+      "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 282683,
+      "sha256": "2a4c4281cf9f51ac6ccc406fdc711a087afe6530f671fa7b80953edc498275ce"
+    },
+    {
+      "path": "vocab.json",
+      "bytes": 1036584,
+      "sha256": "50d6a919f0a0601d56a04eb583c780d18553aa388254ba3158eb6a00f13e2c1a"
+    }
+  ],
+  "speechTurbo": [
+    {
+      "path": "added_tokens.json",
+      "bytes": 34648,
+      "sha256": "3c51f66c4c21f9e126970078f11ae77a78c74aee8df606ee9daba86e467108e0"
+    },
+    {
+      "path": "config.json",
+      "bytes": 1332,
+      "sha256": "35cd83669f75bc2867f3b3a4461850392d5e308cd6ea951c3700539883c28df1"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 3897,
+      "sha256": "16f95291d2f47c944d3c2b19390bba7965666555c1ea2a0bdc850d1fab45612f"
+    },
+    {
+      "path": "merges.txt",
+      "bytes": 493869,
+      "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6"
+    },
+    {
+      "path": "normalizer.json",
+      "bytes": 52666,
+      "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd"
+    },
+    {
+      "path": "onnx/decoder_model_merged_q4.onnx",
+      "bytes": 334147222,
+      "sha256": "8b933ac24074a24a1635084d06a4ed37e387ef22d980f184a5fc27418e9ceeb8"
+    },
+    {
+      "path": "onnx/encoder_model_q4.onnx",
+      "bytes": 424942775,
+      "sha256": "7e64b20dd7b556cb7a2c1c65d9fbf31af985323c006f993d2a9dd10083547d78"
+    },
+    {
+      "path": "preprocessor_config.json",
+      "bytes": 340,
+      "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711"
+    },
+    {
+      "path": "quantize_config.json",
+      "bytes": 285,
+      "sha256": "8da6e4e50ef7c210ba66a98a4256e6d60e38cef8a9a9c74d327251aaf4e78767"
+    },
+    {
+      "path": "README.md",
+      "bytes": 551,
+      "sha256": "19af35fc51ff4eab95ea53a4955af5c2b13f720b802be3191b79fd6f053e4ce7"
+    },
+    {
+      "path": "special_tokens_map.json",
+      "bytes": 2186,
+      "sha256": "baea4ea09372eb4fca86b4e4346139fd73cb807d5087e9de0948e971739c3e74"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 282843,
+      "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 2480617,
+      "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca"
+    },
+    {
+      "path": "vocab.json",
+      "bytes": 1036558,
+      "sha256": "e2aa043ef015641d363d8288e7c241c85e36a5c761fb303598e0710233344387"
     }
   ]
 });

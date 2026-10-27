@@ -7,6 +7,7 @@ export class ModelClient {
       const request = this.pending.get(data.id);
       if (!request) return;
       if (data.event === 'progress') { request.touch(); request.onProgress?.(data); return; }
+      if (data.event === 'update') { request.touch(); request.onUpdate?.(data); return; }
       if (data.event === 'error') { this.fail(new Error(data.message)); return; }
       this.pending.delete(data.id); request.cleanup(); request.resolve(data.value);
     };
@@ -18,7 +19,7 @@ export class ModelClient {
     for (const request of this.pending.values()) { request.cleanup(); request.reject(error); }
     this.pending.clear();
   }
-  request(action, payload = {}, onProgress) {
+  request(action, payload = {}, onProgress, onUpdate) {
     if (this.failure) return Promise.reject(this.failure);
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
@@ -27,7 +28,7 @@ export class ModelClient {
       const touch = () => { clearTimeout(timer); timer = setTimeout(() => this.fail(new Error('기기 모델의 응답이 멈췄어요. 다른 탭을 닫고 통역 준비를 다시 눌러주세요.')), stall); };
       const limit = setTimeout(() => this.fail(new Error('모델 준비 시간이 너무 길어졌어요. 연결과 기기 메모리를 확인하고 다시 준비해 주세요.')), 10 * 60 * 1000);
       const cleanup = () => { clearTimeout(timer); clearTimeout(limit); };
-      this.pending.set(id, { resolve, reject, onProgress, touch, cleanup }); touch();
+      this.pending.set(id, { resolve, reject, onProgress, onUpdate, touch, cleanup }); touch();
       try { this.worker.postMessage({ id, action, payload }, payload.samples ? [payload.samples.buffer] : []); }
       catch (error) { this.fail(error); }
     });

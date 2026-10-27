@@ -26,6 +26,8 @@ export class SpeechSegmenter {
     preRollMs = 250,
     minSpeechMs = 180,
     threshold = 0.008,
+    previewMs = 1200,
+    onPreview,
     onSegment = () => {},
     onLevel = () => {},
   } = {}) {
@@ -42,6 +44,10 @@ export class SpeechSegmenter {
     this.minSpeechSamples = Math.round(sampleRate * minSpeechMs / 1000);
     this.threshold = threshold;
     this.onSegment = onSegment;
+    this.onPreview = onPreview;
+    this.previewSamples = Math.max(this.frameSamples, Math.round(sampleRate * previewMs / 1000));
+    this.nextPreviewAt = this.previewSamples;
+    this.segmentId = 1;
     this.onLevel = onLevel;
     this.pending = new Float32Array(0);
     this.preRoll = [];
@@ -84,6 +90,14 @@ export class SpeechSegmenter {
     }
     this.silentSamples = voiced ? 0 : this.silentSamples + frame.length;
     this.append(frame, voiced);
+    // A preview is a copy, never a consumed chunk. The final segment retains
+    // every sample. Slow devices may skip previews without dropping speech.
+    if (voiced && this.onPreview && this.segmentSamples >= this.nextPreviewAt
+      && this.segmentVoicedSamples >= this.minSpeechSamples) {
+      this.nextPreviewAt = this.segmentSamples + this.previewSamples;
+      this.onPreview({ samples: join(this.pieces, this.segmentSamples),
+        duration: this.segmentSamples / this.sampleRate, segmentId: this.segmentId, reason: 'preview' });
+    }
     if (!voiced && this.silentSamples >= this.silenceLimit) {
       this.emit('silence');
       this.active = false;
@@ -132,11 +146,14 @@ export class SpeechSegmenter {
         duration: samples.length / this.sampleRate,
         speechDuration: this.segmentVoicedSamples / this.sampleRate,
         reason,
+        segmentId: this.segmentId,
       });
     }
     this.pieces = [];
     this.segmentSamples = 0;
     this.segmentVoicedSamples = 0;
+    this.nextPreviewAt = this.previewSamples;
+    this.segmentId++;
   }
 
   flush(reason = 'stop') {

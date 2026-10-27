@@ -5,10 +5,14 @@
 | 기능 | 원본 모델 / 제작자 | 배포하는 변환 파일 / 고정 리비전 | 라이선스 |
 | --- | --- | --- | --- |
 | 한국어·영어 음성 인식 | [Whisper Base / OpenAI](https://github.com/openai/whisper) | [onnx-community/whisper-base](https://huggingface.co/onnx-community/whisper-base/tree/1846881b6b3a3024392c1eea3ad983695bc23925), `1846881b6b3a3024392c1eea3ad983695bc23925` | Whisper 원본 프로젝트: MIT. Hugging Face 원본 모델 카드의 Apache-2.0 표기도 함께 보존 |
+| 고정밀 GPU 한국어·영어 음성 인식 | [Whisper Large v3 Turbo / OpenAI](https://huggingface.co/openai/whisper-large-v3-turbo) | [onnx-community/whisper-large-v3-turbo](https://huggingface.co/onnx-community/whisper-large-v3-turbo/tree/360ebcde2559d60bb474678be3c1de9ef347d01a), `360ebcde2559d60bb474678be3c1de9ef347d01a` | MIT |
+| GPU 미지원 시 고정밀 CPU 음성 인식 | [Whisper Small / OpenAI](https://huggingface.co/openai/whisper-small) | [onnx-community/whisper-small](https://huggingface.co/onnx-community/whisper-small/tree/36050c46d777d46dc4b5f43f6d90574fc38f8732), `36050c46d777d46dc4b5f43f6d90574fc38f8732` | Whisper 원본 프로젝트: MIT. 원본 모델 카드: Apache-2.0 |
 | 한국어 → 영어 번역 | [OPUS-MT ko-en / Helsinki-NLP](https://huggingface.co/Helsinki-NLP/opus-mt-ko-en) | [Xenova/opus-mt-ko-en](https://huggingface.co/Xenova/opus-mt-ko-en/tree/d9fa1ac6008242100fecb4fff9b0a5917a1be81f), `d9fa1ac6008242100fecb4fff9b0a5917a1be81f` | 원본 모델 카드: Apache-2.0 |
 | 영어 ↔ 한국어 번역 | [M2M100 418M / Facebook AI](https://huggingface.co/facebook/m2m100_418M) | [Xenova/m2m100_418M](https://huggingface.co/Xenova/m2m100_418M/tree/9c374f0b7aca709787cea97b047bfbbd1559d177), `9c374f0b7aca709787cea97b047bfbbd1559d177` | MIT |
 
-ONNX 변환과 8-bit 양자화는 위 변환 저장소의 게시자가 수행했습니다. 이 웹사이트는 해당 고정 리비전의 파일을 다시 학습하거나 변경하지 않고 배포합니다. 변환 모델 저장소의 README도 각 모델 파일 경로에 포함됩니다.
+ONNX 변환과 4-bit/8-bit 양자화는 위 변환 저장소의 게시자가 수행했습니다. 이 웹사이트는 해당 고정 리비전의 파일을 다시 학습하거나 변경하지 않고 배포합니다. 변환 모델 저장소의 README도 각 모델 파일 경로에 포함됩니다.
+
+고정밀 모드는 WebGPU에서 809M 매개변수의 Whisper Large v3 Turbo를 q4로 실행합니다. fp16 활성화를 사용하는 q4f16은 사용하지 않습니다. GPU가 없거나 실행에 실패하면 244M Whisper Small q8 CPU 모델을 사용하며 화면에 실제 모델을 표시합니다(Base는 74M). 음성 모델 다운로드는 Turbo 약 764 MB, Small 약 254 MB이며, 실행 환경 약 29 MB와 번역 모델은 별도입니다. 더 큰 모델의 정확도와 속도는 기기·발화에 따라 다르며, 특정 정확도나 실시간 속도를 보장하지 않습니다.
 
 실행 라이브러리 [Transformers.js](https://github.com/huggingface/transformers.js)는 Apache-2.0, [ONNX Runtime](https://github.com/microsoft/onnxruntime)은 MIT입니다. 설치된 라이브러리와 정확히 일치하는 ONNX Runtime JavaScript/WASM 파일을 이 사이트에서 제공합니다. 배포된 ONNX Runtime 버전은 `/runtime/version.json`에서 확인할 수 있습니다.
 

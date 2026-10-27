@@ -76,3 +76,22 @@ test('silence continuation after max split does not produce a second silent segm
   assert.equal(results.length, 1);
   assert.equal(results[0].reason, 'max');
 });
+
+test('previews arrive during continuous speech without consuming final PCM', () => {
+  const previews = [], finals = [];
+  const segmenter = new SpeechSegmenter({ onPreview: item => previews.push(item), onSegment: item => finals.push(item) });
+  const input = voice(4);
+  segmenter.push(input);
+  assert.equal(finals.length, 0);
+  assert.equal(previews.length, 3);
+  assert.equal(previews[0].duration, 1.2);
+  assert.ok(previews.every(item => item.segmentId === 1));
+  previews[0].samples.fill(0);
+  segmenter.flush();
+  assert.equal(finals.length, 1);
+  assert.equal(finals[0].segmentId, 1);
+  assert.deepEqual(finals[0].samples, input, 'preview transfer or edits must not corrupt final samples');
+  segmenter.push(voice(2));
+  segmenter.flush();
+  assert.equal(finals[1].segmentId, 2);
+});
