@@ -1,0 +1,17 @@
+
+> livespeak@1.0.0 build
+> vite build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 1601 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                 0.69 kB │ gzip:     0.46 kB
+dist/assets/capture.worklet-JIdyU_xt.js                         0.72 kB
+dist/version.json                                               4.82 kB │ gzip:     2.31 kB
+dist/assets/model.worker-CmIA52z7.js                          580.95 kB
+dist/assets/ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm  26,861.78 kB │ gzip: 6,676.27 kB
+dist/assets/index-CEXv8wFy.css                                 26.90 kB │ gzip:     5.30 kB
+dist/assets/index-DRbEvyHo.js                                 259.27 kB │ gzip:    82.74 kB
+✓ built in 9.50s

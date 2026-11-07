@@ -1,0 +1,120 @@
+{
+  "browser": "in-app browser iframe viewports; not physical devices",
+  "checks": [
+    {
+      "duplicateIds": [],
+      "height": 740,
+      "horizontalOverflow": false,
+      "inputBottom": 576.203125,
+      "panes": [
+        {
+          "height": 325,
+          "width": 342
+        },
+        {
+          "height": 232,
+          "width": 342
+        },
+        {
+          "height": 102,
+          "width": 344
+        }
+      ],
+      "roomBottom": 740,
+      "sendBottom": 618.203125,
+      "width": 360
+    },
+    {
+      "duplicateIds": [],
+      "height": 420,
+      "horizontalOverflow": false,
+      "inputBottom": 277,
+      "panes": [
+        {
+          "height": 98,
+          "width": 372
+        },
+        {
+          "height": 164,
+          "width": 372
+        },
+        {
+          "height": 83,
+          "width": 374
+        }
+      ],
+      "roomBottom": 420,
+      "sendBottom": 319,
+      "width": 390
+    },
+    {
+      "duplicateIds": [],
+      "height": 932,
+      "horizontalOverflow": false,
+      "inputBottom": 768.203125,
+      "panes": [
+        {
+          "height": 437,
+          "width": 412
+        },
+        {
+          "height": 312,
+          "width": 412
+        },
+        {
+          "height": 102,
+          "width": 414
+        }
+      ],
+      "roomBottom": 932,
+      "sendBottom": 810.203125,
+      "width": 430
+    },
+    {
+      "duplicateIds": [],
+      "height": 1024,
+      "horizontalOverflow": false,
+      "inputBottom": 810.828125,
+      "panes": [
+        {
+          "height": 787,
+          "width": 400
+        },
+        {
+          "height": 787,
+          "width": 278
+        },
+        {
+          "height": 133,
+          "width": 692
+        }
+      ],
+      "roomBottom": 1012,
+      "sendBottom": 848.828125,
+      "width": 768
+    },
+    {
+      "duplicateIds": [],
+      "height": 900,
+      "horizontalOverflow": false,
+      "inputBottom": 731.609375,
+      "panes": [
+        {
+          "height": 708,
+          "width": 841
+        },
+        {
+          "height": 708,
+          "width": 509
+        },
+        {
+          "height": 88,
+          "width": 1364
+        }
+      ],
+      "roomBottom": 888,
+      "sendBottom": 769.609375,
+      "width": 1440
+    }
+  ]
+}

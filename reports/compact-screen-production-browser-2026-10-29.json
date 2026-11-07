@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-28T23:13:51.989Z",
+  "initialLevel": "0",
+  "cases": [
+    {
+      "font": "18px",
+      "guideHeight": 322,
+      "level": "0",
+      "padding": "14px 20px",
+      "viewportWidth": 829,
+      "width": 829
+    },
+    {
+      "font": "16px",
+      "guideHeight": 290,
+      "level": "1",
+      "padding": "12.6px 18px",
+      "viewportWidth": 829,
+      "width": 829
+    },
+    {
+      "font": "14px",
+      "guideHeight": 257,
+      "level": "2",
+      "padding": "11.2px 16px",
+      "viewportWidth": 829,
+      "width": 829
+    }
+  ],
+  "preferenceAfterReload": "2",
+  "finalLevel": "0",
+  "console": []
+}

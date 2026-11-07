@@ -1,0 +1,6 @@
+[
+  "null",
+  "[\n  {\n    \"id\": \"a2d93dff-e119-4d3d-a15c-b983ce8f00ba\",\n    \"createdAt\": 1793546730275,\n    \"startedAt\": 37081.12000000477,\n    \"translation\": \"내일까지 회의 안건을 보내주실 수 있으신가요?\",\n    \"input\": \"voice\",\n    \"live\": true,\n    \"speechModel\": \"Qwen3-ASR-1.7B\",\n    \"original\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"language\": \"en-US\",\n    \"sourcePending\": false,\n    \"sample\": true,\n    \"captureStartedAt\": 36547.3900000155,\n    \"firstSourceAfterCaptureMs\": 2694,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"firstTranslationAfterCaptureMs\": 6563,\n    \"milliseconds\": 6204,\n    \"translationMilliseconds\": 1541,\n    \"waitMilliseconds\": 1,\n    \"browserUpdates\": 30,\n    \"firstTranslationDomMs\": 6563\n  }\n]",
+  "[]",
+  "[\n  {\n    \"ko\": \"내일까지 안건을 확정하기 위해 먼저 포함되어야 할 핵심 안건 항목이 무엇인지 확인해 주시겠습니까?\",\n    \"en\": \"To finalize the agenda by tomorrow, could you clarify which key topics need to be included?\",\n    \"sourceId\": \"a2d93dff-e119-4d3d-a15c-b983ce8f00ba\",\n    \"sourceAt\": 1793546730275\n  }\n]"
+]

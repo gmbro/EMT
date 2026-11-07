@@ -1,0 +1,53 @@
+{
+  "synthetic": true,
+  "records": [
+    {
+      "id": "512b72c8-3812-4b21-8027-ad021aaa8db4",
+      "createdAt": 1793205524667,
+      "startedAt": 98204.43500000238,
+      "translation": "내일까지 회의 의안을 보내주실 수 있나요?",
+      "input": "voice",
+      "sample": true,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 1154,
+      "liveLastVoiceStreamMs": 2816,
+      "captureStartedAt": 96913.60000002384,
+      "firstSourceAfterCaptureMs": 1291,
+      "status": "complete",
+      "error": "",
+      "firstTranslationAfterCaptureMs": 5691,
+      "milliseconds": 4577,
+      "translationMilliseconds": 1530,
+      "waitMilliseconds": 0,
+      "browserUpdates": 11
+    }
+  ],
+  "speeches": [
+    {
+      "id": "259ef036-3fb8-4ee1-beca-d38de4b8dd72",
+      "ko": "제안은 이해했습니다. 다만 아직 승인한 것은 아니며, 내부 검토 후 답변드리겠습니다.",
+      "en": "I understand your proposal. However, this is not an approval yet, and we will get back to you after an internal review.",
+      "createdAt": 1793205523362,
+      "status": "complete",
+      "error": ""
+    }
+  ],
+  "replies": [
+    {
+      "ko": "알겠습니다. 이번 회의의 구체적인 논의 범위가 어떻게 되나요?",
+      "en": "Understood. What is the specific scope of discussion for this meeting?"
+    },
+    {
+      "ko": "확인했습니다. 의안에서 가장 중요하게 다뤄야 할 세부 항목이나 우선순위가 있나요?",
+      "en": "Got it. Are there specific details or priorities that should be emphasized in the agenda?"
+    },
+    {
+      "ko": "알겠습니다. 의안 작성 시 특별히 반영해야 할 조건이나 선호 사항이 있으신가요?",
+      "en": "Understood. Are there any specific conditions or preferences to keep in mind for the agenda?"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "count": 1,
+    "options": [
+      {
+        "ko": "6주 일정에 필수 보안 검토 기간이 포함되어 있나요? 보안 검토가 완료되어야 진행할 수 있습니다.",
+        "en": "Does the six-week timeline include the required security review? The security review must be completed before implementation."
+      }
+    ],
+    "passed": false,
+    "usage": {
+      "total_input_tokens": 402,
+      "total_output_tokens": 58,
+      "total_thought_tokens": 0,
+      "total_cached_tokens": 0,
+      "total_tokens": 460
+    },
+    "firstTokenMs": 1483
+  },
+  {
+    "count": 3,
+    "options": [
+      {
+        "ko": "6주 일정에 보안 검토 기간이 포함되어 있나요?",
+        "en": "Does the six-week timeline include the required security review?"
+      },
+      {
+        "ko": "구현을 시작하기 전에 보안 검토가 먼저 완료되어야 합니다.",
+        "en": "The security review must be completed before implementation can begin."
+      },
+      {
+        "ko": "보안 검토 일정은 6주 일정과 어떻게 연계되나요?",
+        "en": "How does the security review schedule align with the six-week timeline?"
+      }
+    ],
+    "passed": true,
+    "usage": {
+      "total_input_tokens": 402,
+      "total_output_tokens": 106,
+      "total_thought_tokens": 0,
+      "total_cached_tokens": 0,
+      "total_tokens": 508
+    },
+    "firstTokenMs": 1491
+  }
+]

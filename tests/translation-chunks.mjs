@@ -21,7 +21,7 @@ test('no-space languages and a long single word are still bounded', () => {
 });
 
 test('all long-text translation chunks stream into the same cumulative output', async () => {
-  const engine = new MeetingEngine();
+  const engine = new MeetingEngine({ translationMode: 'local' });
   const input = 'Please send the meeting notes. '.repeat(150);
   const calls = [], updates = [];
   engine.translationKinds.set('en-US', 'native');

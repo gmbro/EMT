@@ -5,7 +5,7 @@ import captureWorkletUrl from './capture.worklet.js?worker&url';
 /** Starts local PCM capture from an already-authorized MediaStream.
  * Caller supplies getUserMedia/getDisplayMedia; no browser recognition service
  * or network endpoint is used. stop() owns stream tracks by default. */
-export async function createAudioCapture(stream, { onSegment, onLevel, onError = () => {}, onEnded, audioBuffer, ...segmentOptions } = {}) {
+export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, onLevel, onError = () => {}, onEnded, audioBuffer, audioContext, ...segmentOptions } = {}) {
   const Context = window.AudioContext || window.webkitAudioContext;
   if (!Context || !window.AudioWorkletNode) {
     for (const track of stream?.getTracks() || []) track.stop();
@@ -13,7 +13,7 @@ export async function createAudioCapture(stream, { onSegment, onLevel, onError =
   }
   let context;
   try {
-    try { context = new Context({ sampleRate: 16000, latencyHint: 'interactive' }); }
+    try { context = audioContext || new Context({ sampleRate: 16000, latencyHint: 'interactive' }); }
     catch { context = new Context({ latencyHint: 'interactive' }); }
   }
   catch (error) {
@@ -51,7 +51,7 @@ export async function createAudioCapture(stream, { onSegment, onLevel, onError =
       }
       finished = true;
       if (flush) {
-        segmenter.push(resampler.flush());
+        const tail = resampler.flush(); onPCM?.(tail); segmenter.push(tail);
         segmenter.flush();
       }
       if (worklet) {
@@ -76,7 +76,7 @@ export async function createAudioCapture(stream, { onSegment, onLevel, onError =
     worklet.port.onmessage = ({ data }) => {
       if (data?.type === 'flushed') { flushResolve?.(); return; }
       if (!finished && data?.type === 'samples') {
-        try { segmenter.push(resampler.push(data.samples)); }
+        try { const pcm = resampler.push(data.samples); onPCM?.(pcm); segmenter.push(pcm); }
         catch (error) { onError(error); }
       }
     };
@@ -92,6 +92,7 @@ export async function createAudioCapture(stream, { onSegment, onLevel, onError =
     for (const track of audioTracks) track.addEventListener('ended', endHandler);
     await context.resume();
     if (context.state !== 'running') throw new Error('오디오 시작 권한을 확인한 뒤 시작 버튼을 다시 눌러주세요.');
+    context.onstatechange=()=>{if(!finished&&!stopPromise&&context.state!=='running')onError(new Error('기기가 음성 입력을 일시 중단했어요. 화면을 켠 상태에서 시작을 다시 눌러주세요.'));};
     if (audioBuffer) source.start();
     return { stop, sampleRate: 16000, ended };
   } catch (error) {

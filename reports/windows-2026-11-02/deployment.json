@@ -1,0 +1,27 @@
+{
+  "buildId": "bf6fd3829857",
+  "differences": [
+    "vercel.json"
+  ],
+  "zip": {
+    "status": 200,
+    "bytes": 2360025,
+    "sha256": "cb5c98f4b86e126eeef1057b9d6963a3d9e8f92e912062ba292db637182b56e6",
+    "cache": "no-store"
+  },
+  "denied": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/api/qwen",
+      "status": 404
+    },
+    {
+      "path": "/local/qwen/worker-windows.py",
+      "status": 404
+    }
+  ],
+  "windowsRuntimeVerified": false
+}

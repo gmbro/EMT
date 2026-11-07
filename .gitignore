@@ -8,3 +8,9 @@ dist/
 .model-cache/
 public/models/
 public/runtime/
+
+.qwen-bootstrap/
+.venv-qwen/
+.qwen-models/
+__pycache__/
+*.pyc

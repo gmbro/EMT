@@ -1,0 +1,15 @@
+{
+  "checks": [
+    {
+      "path": "/api/translate",
+      "foreignOrigin": 403
+    },
+    {
+      "path": "/api/live-token",
+      "foreignOrigin": 403
+    }
+  ],
+  "productionDependencyAudit": 0,
+  "credentialInBundle": false,
+  "unitTestsPassed": 151
+}

@@ -1,0 +1,94 @@
+{
+  "origin": "https://emt-theta.vercel.app",
+  "synthetic": true,
+  "checkedAt": "2026-10-29T16:32:01.176Z",
+  "physicalMicrophone": false,
+  "physicalMobile": false,
+  "version": {
+    "buildId": "5eb994037753",
+    "sourceHash": "5eb9940377532bb1f90fe4cc327bbc78be0de930f2885346b0cb80a4097eca6b",
+    "applicationSourcesMatch": true,
+    "platformOnlyDifferences": [
+      "vercel.json"
+    ]
+  },
+  "publicStatus": 200,
+  "health": {
+    "ready": true,
+    "model": "gemini-3.6-flash",
+    "audio": "Google Gemini Live Transcribe",
+    "translation": "Google Gemini",
+    "store": false
+  },
+  "negation": {
+    "text": "저희는 이번 주에 계약서에 서명하기로 약속하지 않았습니다. 또한 자동 연장에도 동의하지 않았습니다.",
+    "firstTokenMs": 1488,
+    "totalMs": 1557
+  },
+  "speech": {
+    "text": "I understand your proposal, but we haven't approved the contract yet, so I will get back to you after our internal review.",
+    "firstTokenMs": 1633,
+    "totalMs": 1952
+  },
+  "guide": {
+    "replies": [
+      {
+        "ko": "제안된 작업 범위와 예상 완료 일정을 다시 확인해 주시겠습니까?",
+        "en": "Could you reconfirm the proposed scope and estimated completion date?"
+      }
+    ]
+  },
+  "voice": [
+    {
+      "id": "77a58fb3-3d14-4095-962c-1148ceb12db1",
+      "createdAt": 1793291531407,
+      "startedAt": 10258.533208,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+      "liveFirstSourceStreamMs": 617,
+      "liveLastVoiceStreamMs": 2353
+    },
+    {
+      "id": "b24404ad-2531-4d63-b18d-8c2857fbe858",
+      "createdAt": 1793291536521,
+      "startedAt": 15372.815666,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "stableOriginal": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "liveFirstSourceStreamMs": 5731,
+      "liveLastVoiceStreamMs": 7549
+    }
+  ],
+  "voiceTranslation": {
+    "text": "내일까지 회의 의안을 보내주실 수 있나요?",
+    "firstTokenMs": 1503,
+    "totalMs": 1606
+  },
+  "denied": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/tests/meeting-browser.html",
+      "status": 404
+    },
+    {
+      "path": "/reports/release-browser-2026-10-29.json",
+      "status": 404
+    }
+  ]
+}

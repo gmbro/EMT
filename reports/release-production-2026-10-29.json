@@ -1,0 +1,112 @@
+{
+  "origin": "https://emt-theta.vercel.app",
+  "synthetic": true,
+  "checkedAt": "2026-10-28T16:55:16.465Z",
+  "physicalMicrophone": false,
+  "physicalMobile": false,
+  "version": {
+    "buildId": "94953b557578",
+    "sourceHash": "94953b5575782abb8e8ad66a52ed3b6215bf931bc803b28168943abb69984287",
+    "applicationSourcesMatch": true,
+    "platformOnlyDifferences": [
+      "vercel.json"
+    ]
+  },
+  "publicStatus": 200,
+  "health": {
+    "ready": true,
+    "model": "gemini-3.6-flash",
+    "audio": "Google Gemini Live Transcribe",
+    "translation": "Google Gemini",
+    "store": false
+  },
+  "negation": {
+    "text": "저희는 이번 주에 계약서에 서명하기로 약속하지 않았습니다. 또한 자동 연장에 대해서도 동의하지 않았습니다.",
+    "firstTokenMs": 1511,
+    "totalMs": 1773
+  },
+  "speech": {
+    "text": "I understand your proposal, but we haven't approved the contract yet. We will get back to you after our internal review.",
+    "firstTokenMs": 1883,
+    "totalMs": 1936
+  },
+  "guide": {
+    "replies": [
+      {
+        "ko": "범위에 포함되는 작업이 구체적으로 어디까지인가요?",
+        "en": "What specific tasks are included in the scope?"
+      },
+      {
+        "ko": "세부 사항 중 어떤 업무가 가장 우선순위인가요?",
+        "en": "Which of the detailed tasks is the highest priority?"
+      },
+      {
+        "ko": "원하시는 특정 조건이나 선호 사항이 있으신가요?",
+        "en": "Do you have any specific conditions or preferences?"
+      }
+    ]
+  },
+  "voice": [
+    {
+      "id": "a8e54b5d-6cc3-473f-855b-f20241009325",
+      "createdAt": 1793206528059,
+      "startedAt": 11623.414166,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 689,
+      "liveLastVoiceStreamMs": 2349
+    },
+    {
+      "id": "b07bd073-e0aa-4b6f-b382-20e0180e7910",
+      "createdAt": 1793206533100,
+      "startedAt": 16664.539916,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 5730,
+      "liveLastVoiceStreamMs": 7542
+    }
+  ],
+  "voiceTranslation": {
+    "text": "내일까지 회의 의안을 보내주실 수 있나요?",
+    "firstTokenMs": 1367,
+    "totalMs": 1520
+  },
+  "denied": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/tests/meeting-browser.html",
+      "status": 404
+    },
+    {
+      "path": "/reports/release-browser-2026-10-29.json",
+      "status": 404
+    }
+  ],
+  "deploymentId": "dpl_FV6fej8uR2dMrb915DvkV9xNKQ4r",
+  "deploymentUrl": "https://emt-58883lbdd-gmbros-projects.vercel.app",
+  "functionsRegion": "icn1",
+  "unitTests": 108,
+  "browser": {
+    "consoleErrors": 0,
+    "typedResultRestoredAfterReload": true,
+    "nativeChrome": "Blocked by browser tool host access policy",
+    "nativeEdge": "Not connected",
+    "physicalMobile": "Not connected",
+    "responsiveViewports": 5
+  }
+}

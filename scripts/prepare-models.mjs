@@ -83,7 +83,7 @@ async function prepareRuntime() {
   const ortDist = dirname(transformersRequire.resolve('onnxruntime-web'));
   const runtimeRoot = join(root, 'public', 'runtime');
   if (!verifyOnly) await mkdir(runtimeRoot, { recursive: true });
-  const files = ['ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm'];
+  const files = ['ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm', 'ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm'];
   for (const name of files) {
     let source = join(ortDist, name);
     try { await stat(source); }
@@ -107,14 +107,20 @@ async function prepareRuntime() {
   }
 }
 
-const queue = Object.entries(MODEL_CATALOG).flatMap(([key, model]) => MODEL_ASSETS[key].map(asset => ({ model, asset })));
+// Cloud translation needs no downloaded MT weights. Real-time audio uses only
+// the native recognizer or the small multilingual on-device speech model.
+const enabledModels = Object.entries(MODEL_CATALOG).filter(([key]) => key === 'speech');
+if (!verifyOnly) for (const [key, model] of Object.entries(MODEL_CATALOG)) {
+  if (key !== 'speech') await rm(join(outputRoot, model.localId), { recursive: true, force: true });
+}
+const queue = enabledModels.flatMap(([key, model]) => MODEL_ASSETS[key].map(asset => ({ model, asset })));
 let cursor = 0;
 await Promise.all(Array.from({ length: 3 }, async () => {
   while (cursor < queue.length) await prepareAsset(queue[cursor++]);
 }));
 await prepareRuntime();
 if (!verifyOnly) {
-  await writeFile(join(outputRoot, 'catalog.json'), JSON.stringify(MODEL_CATALOG, null, 2) + '\n');
+  await writeFile(join(outputRoot, 'catalog.json'), JSON.stringify(Object.fromEntries(enabledModels), null, 2) + '\n');
 }
-const total = Object.values(MODEL_CATALOG).reduce((sum, model) => sum + model.bytes, 0);
+const total = enabledModels.reduce((sum, [, model]) => sum + model.bytes, 0);
 console.log(`[models] ${verifyOnly ? 'Verified' : 'Prepared'} ${queue.length} pinned model files (${(total / 1e6).toFixed(1)} MB) and the same-origin ONNX runtime.`);

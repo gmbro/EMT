@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-28T23:17:55.371Z",
+  "defaultSize": "1",
+  "cases": [
+    {
+      "english": "14px",
+      "label": "−"
+    },
+    {
+      "english": "16px",
+      "label": "기본"
+    },
+    {
+      "english": "18px",
+      "label": "+"
+    }
+  ],
+  "console": []
+}

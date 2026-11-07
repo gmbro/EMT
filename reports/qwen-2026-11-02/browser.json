@@ -1,0 +1,9 @@
+{
+  "method": "Realtime-paced synthetic WAV in IAB, Qwen MLX on this Mac",
+  "sections": [
+    "null",
+    "[\n  {\n    \"id\": \"14cbaec6-b0c1-480d-bc95-8a83d7600f34\",\n    \"createdAt\": 1793546433555,\n    \"startedAt\": 17718.619999974966,\n    \"translation\": \"\",\n    \"input\": \"voice\",\n    \"live\": true,\n    \"speechModel\": \"Qwen3-ASR-1.7B\",\n    \"original\": \"회의 일정을 내일 오후 세 시로 변경해 주세요.\",\n    \"language\": \"ko-KR\",\n    \"sourcePending\": false,\n    \"sample\": true,\n    \"captureStartedAt\": 17061.125,\n    \"firstSourceAfterCaptureMs\": 3138,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"transcriptOnly\": true,\n    \"browserUpdates\": 71\n  },\n  {\n    \"id\": \"6db6b078-6f82-47d2-9f7c-9cef798c5120\",\n    \"createdAt\": 1793546446491,\n    \"startedAt\": 30654.294999986887,\n    \"translation\": \"\",\n    \"input\": \"voice\",\n    \"live\": true,\n    \"speechModel\": \"Qwen3-ASR-1.7B\",\n    \"original\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"language\": \"en-US\",\n    \"sourcePending\": false,\n    \"sample\": true,\n    \"captureStartedAt\": 30128.759999990463,\n    \"firstSourceAfterCaptureMs\": 3172,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"transcriptOnly\": true,\n    \"browserUpdates\": 30\n  }\n]",
+    "[]",
+    "[\n  {\n    \"ko\": \"내일 일정 변경 확인했습니다. 안건 문서는 언제쯤 공유해 드릴 수 있는지 확정되면 말씀해 주시겠습니까?\",\n    \"en\": \"I have confirmed the schedule change for tomorrow. Could you let me know once it is confirmed when the agenda document can be shared?\",\n    \"sourceId\": \"6db6b078-6f82-47d2-9f7c-9cef798c5120\",\n    \"sourceAt\": 1793546446491\n  }\n]"
+  ]
+}

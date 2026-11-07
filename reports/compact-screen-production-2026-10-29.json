@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-28T23:13:29.552Z",
+  "deploymentId": "dpl_CDbgYkE7LCb54oLv68T1FcYTkYi7",
+  "url": "https://emt-theta.vercel.app",
+  "httpStatus": 200,
+  "localBuildId": "2d6cc451e00e",
+  "productionBuildId": "8f2df54ac75e",
+  "sourceDifferences": [
+    "vercel.json"
+  ],
+  "allAppAndApiSourcesMatch": true,
+  "assets": [
+    {
+      "path": "/assets/index-CaprmI-2.js",
+      "status": 200
+    },
+    {
+      "path": "/assets/index-DMKHvLHi.css",
+      "status": 200
+    }
+  ]
+}

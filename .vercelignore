@@ -4,3 +4,14 @@ dist
 public/models
 public/runtime
 .git
+.vercel
+.env
+.env.*
+reports
+tests
+scripts
+
+.qwen-bootstrap
+.venv-qwen
+.qwen-models
+local/qwen/worker.py

@@ -28,14 +28,19 @@ test('one oversized row retains both language tails without broken surrogate pai
   assert.equal(result.removed, 10000);
 });
 
-test('large transcript is capped when translation arrives after original', () => {
+test('a long meeting retains every earlier row when translations arrive later', () => {
   let history = { records: [{ id: 'old', original: 'a'.repeat(6000), translation: '' }, { id: 'new', original: 'b'.repeat(3000), translation: '' }], characterCount: 9000, historyTrimmed: 0 };
   history = mutateCaptionHistory(history, records => records.map(row => row.id === 'new' ? { ...row, translation: '다'.repeat(3000), status: 'complete' } : row));
-  assert.deepEqual(history.records.map(row => row.id), ['new']);
-  assert.equal(history.characterCount, 6000);
-  assert.equal(history.historyTrimmed, 6000);
-  const unchanged = mutateCaptionHistory(history, records => records.map(row => row.id === 'old' ? { ...row, translation: 'late result' } : row));
-  assert.equal(unchanged.characterCount, 6000, 'late result cannot resurrect an evicted source row');
+  assert.deepEqual(history.records.map(row => row.id), ['old', 'new']);
+  assert.equal(history.characterCount, 12000); assert.equal(history.historyTrimmed, 0);
+  history = mutateCaptionHistory(history, rows => rows.map(row => row.id === 'old' ? { ...row, translation: 'late result' } : row));
+  assert.equal(history.records[0].translation, 'late result');
+});
+test('3000 long meeting rows survive without clipping Unicode or removing first utterance', () => {
+  const records=Array.from({length:3000},(_,i)=>({id:String(i),original:`${i}: `+'Meeting detail 😀 '.repeat(20),translation:'회의 세부사항 '.repeat(20)}));
+  const history=mutateCaptionHistory({records:[],historyTrimmed:0},()=>records);
+  assert.equal(history.records.length,3000);assert.equal(history.records[0].original,records[0].original);
+  assert.ok(history.characterCount>1000000);assert.equal(history.historyTrimmed,0);
 });
 
 test('zero translation and one-character budgets stay within the cap', () => {
@@ -92,4 +97,11 @@ test('failed interim translation does not prevent the following utterance', asyn
   const runner = createLatestTaskRunner({ ...clock, run: async task => { if (task === 'bad') throw new Error('timeout'); return task; }, publish: value => published.push(value), onError: error => errors.push(error.message) });
   runner.submit('bad'); await clock.tick(); runner.submit('good'); await clock.tick();
   assert.deepEqual(errors, ['timeout']); assert.deepEqual(published, ['good']); runner.dispose();
+});
+
+test('zero-delay preview yields while final translation slots are busy',async()=>{
+ const waits=[],tasks=[];let free=false;
+ const runner=createLatestTaskRunner({delay:0,canRun:()=>free,schedule:(fn,ms)=>{tasks.push(fn);waits.push(ms);return tasks.length;},cancel:()=>{},run:async()=>{},publish:()=>{}});
+ runner.submit('draft');await tasks.shift()();assert.deepEqual(waits,[0,50]);
+ free=true;await tasks.shift()();runner.dispose();
 });

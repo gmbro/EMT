@@ -1,0 +1,29 @@
+{
+  "versionStatus": 200,
+  "buildId": "08ecbe77bebc",
+  "localBuildId": "56c37023ad0a",
+  "diffs": [
+    "vercel.json"
+  ],
+  "zipStatus": 200,
+  "zipMatches": true,
+  "zipCache": "no-store",
+  "probes": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/api/qwen",
+      "status": 404
+    },
+    {
+      "path": "/local/qwen/worker-windows.py",
+      "status": 404
+    },
+    {
+      "path": "/tests/meeting-browser.html",
+      "status": 404
+    }
+  ]
+}

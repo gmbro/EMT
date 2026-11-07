@@ -66,7 +66,7 @@ test('selected-language native translation is ready without reply AI or the othe
     Translator: { availability: async () => 'available', create: async () => ({ translate: async text => text, destroy() {} }) },
   };
   try {
-    const engine = new MeetingEngine();
+    const engine = new MeetingEngine({ translationMode: 'local' });
     const result = await engine.prepare('en-US');
     assert.ok(result.nativeSpeech);
     assert.equal(engine.canSuggest, false);
@@ -82,7 +82,7 @@ test('cancelled preparation destroys a late native translator without starting a
   const created = new Promise(resolve => { resolveModel = resolve; });
   globalThis.window = { Translator: { availability: async () => 'available', create: () => created } };
   try {
-    const engine = new MeetingEngine();
+    const engine = new MeetingEngine({ translationMode: 'local' });
     const pending = engine.prepareTranslation('en-US');
     await new Promise(resolve => setImmediate(resolve));
     engine.destroy();

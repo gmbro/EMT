@@ -1,0 +1,68 @@
+[
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "160px 160px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 640,
+    "overflow": false,
+    "width": 320
+  },
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "195px 195px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 844,
+    "overflow": false,
+    "width": 390
+  },
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "384px 384px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 1024,
+    "overflow": false,
+    "width": 768
+  },
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "640px 640px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 720,
+    "overflow": false,
+    "width": 1280
+  },
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "720px 720px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 900,
+    "overflow": false,
+    "width": 1440
+  },
+  {
+    "atLatest": true,
+    "caption": "14px",
+    "columns": "422px 422px",
+    "following": true,
+    "footerOverflow": false,
+    "header": "12px",
+    "height": 390,
+    "overflow": false,
+    "width": 844
+  }
+]

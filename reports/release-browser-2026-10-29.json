@@ -1,0 +1,63 @@
+{
+  "synthetic": true,
+  "records": [
+    {
+      "id": "fee6e021-0529-406b-b985-1117860d7669",
+      "createdAt": 1793205266569,
+      "startedAt": 14689.350000023842,
+      "translation": "내일까지 회의 의안을 보내주실 수 있나요?",
+      "input": "voice",
+      "sample": true,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 522,
+      "liveLastVoiceStreamMs": 1521,
+      "captureStartedAt": 12727.519999980927,
+      "firstSourceAfterCaptureMs": 1962,
+      "status": "complete",
+      "error": "",
+      "firstTranslationAfterCaptureMs": 3689,
+      "milliseconds": 3995,
+      "translationMilliseconds": 1563,
+      "waitMilliseconds": 0,
+      "browserUpdates": 22
+    },
+    {
+      "id": "f61e77aa-fb34-4d04-9e32-0a1ed638867f",
+      "createdAt": 1793205270884,
+      "startedAt": 19004.17500001192,
+      "translation": "",
+      "input": "voice",
+      "sample": true,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 4837,
+      "liveLastVoiceStreamMs": 6513,
+      "captureStartedAt": 12727.519999980927,
+      "firstSourceAfterCaptureMs": 6277,
+      "status": "complete",
+      "error": "",
+      "browserUpdates": 8
+    }
+  ],
+  "replies": [
+    {
+      "ko": "확인했습니다. 의안에 포함할 논의 범위가 어떻게 되나요?",
+      "en": "Got it. What is the scope of discussions to include in the agenda?"
+    },
+    {
+      "ko": "확인했습니다. 우선적으로 다뤄야 할 세부 항목이 있나요?",
+      "en": "Understood. Are there specific details or priorities that should be highlighted?"
+    },
+    {
+      "ko": "확인했습니다. 선호하시는 전달 형식이나 조건이 있으신가요?",
+      "en": "Got it. Do you have any preferred format or conditions for the agenda?"
+    }
+  ]
+}

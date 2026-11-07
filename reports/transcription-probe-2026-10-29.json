@@ -1,0 +1,119 @@
+{
+  "synthetic": true,
+  "setup": {
+    "model": "models/gemini-3.5-transcribe-live",
+    "sessionResumption": {},
+    "contextWindowCompression": {
+      "slidingWindow": {}
+    },
+    "generationConfig": {
+      "responseModalities": [
+        "TEXT"
+      ]
+    },
+    "inputAudioTranscription": {
+      "languageCodes": [
+        "en-US",
+        "ko-KR"
+      ]
+    }
+  },
+  "events": [
+    {
+      "ms": 662,
+      "interimInputTranscription": {
+        "text": "Could you"
+      }
+    },
+    {
+      "ms": 1187,
+      "interimInputTranscription": {
+        "text": "Could you send me the"
+      }
+    },
+    {
+      "ms": 1711,
+      "interimInputTranscription": {
+        "text": "Could you send me the meeting"
+      }
+    },
+    {
+      "ms": 2238,
+      "interimInputTranscription": {
+        "text": "Could you send me the meeting agenda by"
+      }
+    },
+    {
+      "ms": 2615,
+      "interimInputTranscription": {
+        "text": "Could you send me the meeting agenda by tomorrow?"
+      }
+    },
+    {
+      "ms": 3153,
+      "interimInputTranscription": {
+        "text": "Could you send me the meeting agenda by tomorrow?"
+      }
+    },
+    {
+      "ms": 3653,
+      "interimInputTranscription": {
+        "text": "Could you send me the meeting agenda by tomorrow?"
+      }
+    },
+    {
+      "ms": 4055,
+      "inputTranscription": {
+        "text": "Could you send me the meeting agenda by tomorrow?"
+      }
+    },
+    {
+      "ms": 5734,
+      "interimInputTranscription": {
+        "text": "회일정을"
+      }
+    },
+    {
+      "ms": 6168,
+      "interimInputTranscription": {
+        "text": "회일정을 내일"
+      }
+    },
+    {
+      "ms": 6677,
+      "interimInputTranscription": {
+        "text": "회의 일정을 내일 오후"
+      }
+    },
+    {
+      "ms": 7190,
+      "interimInputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로"
+      }
+    },
+    {
+      "ms": 7703,
+      "interimInputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로 변경해"
+      }
+    },
+    {
+      "ms": 8251,
+      "interimInputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로 변경해 주세요."
+      }
+    },
+    {
+      "ms": 8656,
+      "interimInputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로 변경해 주세요."
+      }
+    },
+    {
+      "ms": 9052,
+      "inputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로 변경해 주세요."
+      }
+    }
+  ]
+}

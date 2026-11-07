@@ -1,0 +1,78 @@
+{
+  "synthetic": true,
+  "oneConfiguredConnection": true,
+  "records": [
+    {
+      "id": "7a76bb8f-c6d9-463d-9fed-42637a400b80",
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "translation": "내일까지 회의 안건을 보내주시겠습니까?",
+      "createdAt": 1793204181371,
+      "startedAt": 35932.79000002146,
+      "sample": true,
+      "input": "voice",
+      "live": true,
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 3337,
+      "liveFirstTranslationStreamMs": 3527,
+      "liveLastVoiceStreamMs": 5120,
+      "status": "complete",
+      "error": "",
+      "liveFirstTranslationMs": 190,
+      "milliseconds": 3588,
+      "translationMilliseconds": 1695,
+      "waitMilliseconds": 1695
+    },
+    {
+      "id": "bc8b690e-6798-4caa-9cd2-e669576c0f62",
+      "language": "en-US",
+      "original": "Hey,",
+      "translation": "저기,",
+      "createdAt": 1793204183908,
+      "startedAt": 38469.719999969006,
+      "sample": true,
+      "input": "voice",
+      "live": true,
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 5874,
+      "liveFirstTranslationStreamMs": 6232,
+      "liveLastVoiceStreamMs": 6912,
+      "status": "complete",
+      "error": "",
+      "liveFirstTranslationMs": 358,
+      "milliseconds": 5639,
+      "translationMilliseconds": 4588,
+      "waitMilliseconds": 4591
+    },
+    {
+      "id": "7df78025-69a4-4c60-90a7-31cd38f3d63e",
+      "language": "ko-KR",
+      "original": "일정을 내일 오후 3시로 변경 해주세요.",
+      "translation": "",
+      "createdAt": 1793204184956,
+      "startedAt": 39517.564999997616,
+      "sample": true,
+      "input": "voice",
+      "live": true,
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 6922,
+      "liveLastVoiceStreamMs": 7808,
+      "status": "complete",
+      "error": ""
+    }
+  ],
+  "replies": [
+    {
+      "ko": "네, 이번 일정 변경의 범위가 모든 참석자에게 적용되는 것인가요?",
+      "en": "Got it, is this schedule change applicable to all attendees?"
+    },
+    {
+      "ko": "알겠습니다, 최우선으로 고려해야 할 특정 시간대나 세부 사항이 있으신가요?",
+      "en": "Understood, are there specific time slots or details we should prioritize?"
+    },
+    {
+      "ko": "네, 일정 변경을 위한 별도의 선호 사항이나 조건이 있으신가요?",
+      "en": "Okay, do you have any specific preferences or conditions for adjusting the schedule?"
+    }
+  ]
+}

@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "npm run prepare:models && vite build",
+    "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "prepare:models": "node scripts/prepare-models.mjs",
-    "test": "node --test tests/*.mjs"
+    "test": "node --test tests/*.mjs",
+    "dev:qwen": "node local/qwen/run.mjs",
+    "package:windows": "python3 scripts/package-windows.py"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",
+    "docx": "^9.15.1",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

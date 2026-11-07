@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "buildId": "2e616c6f8f90",
+  "differences": [
+    "vercel.json"
+  ],
+  "assets": [
+    {
+      "path": "/assets/index-CLFtP_IS.js",
+      "status": 200
+    },
+    {
+      "path": "/assets/index-COfzapmZ.css",
+      "status": 200
+    }
+  ]
+}

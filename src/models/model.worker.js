@@ -1,6 +1,8 @@
 import { env, pipeline, WhisperTextStreamer, TextStreamer } from '@huggingface/transformers';
-import { MODEL_CATALOG } from './catalog.js';
+import { MODEL_CATALOG, MODEL_ASSETS } from './catalog.js';
 import { localModelURL, speechConfiguration } from './model-policy.mjs';
+import { fetchModelAsset } from './resilient-fetch.mjs';
+import { whisperAutoLanguageOptions } from '../speech-language.mjs';
 
 // Models/runtime are same-origin static files. No inference HTTP endpoint exists.
 env.allowRemoteModels = false;
@@ -10,15 +12,24 @@ env.useBrowserCache = true;
 env.useWasmCache = false;
 // Transformers v4's ORT WebGPU backend calls webgpuInit, provided by the
 // matching asyncify build. The legacy JSEP module only exposes jsepInit.
-env.backends.onnx.wasm.wasmPaths = { mjs: '/runtime/ort-wasm-simd-threaded.asyncify.mjs', wasm: '/runtime/ort-wasm-simd-threaded.asyncify.wasm' };
-env.backends.onnx.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+// The fast speech path runs on CPU. Load its smaller CPU runtime regardless
+// of WebGPU availability; only the optional GPU path needs asyncify.
+env.backends.onnx.wasm.wasmPaths = { mjs: '/runtime/ort-wasm-simd-threaded.mjs', wasm: '/runtime/ort-wasm-simd-threaded.wasm' };
+// Four-thread initialization stalled in the target embedded browser with both
+// runtime builds. The dedicated single-thread worker was verified to start.
+env.backends.onnx.wasm.numThreads = 1;
 env.backends.onnx.wasm.proxy = false;
 const localFetch = self.fetch.bind(self);
 const prefixes = Object.values(MODEL_CATALOG).map(model => `/models/${model.localId}/`);
+const assetSizes = new Map(Object.entries(MODEL_CATALOG).flatMap(([key, model]) => MODEL_ASSETS[key].map(asset => [`/models/${model.localId}/${asset.path}`, asset.bytes])));
+let requestId;
 env.fetch = (input, options = {}) => {
   try {
     const url = localModelURL(input, self.location.origin, prefixes, options.method || input?.method || 'GET');
-    return localFetch(url.href, { ...options, credentials: 'omit', referrerPolicy: 'no-referrer' });
+    const id = requestId;
+    return fetchModelAsset(url.href, { ...options, credentials: 'omit', referrerPolicy: 'no-referrer' }, { bytes: assetSizes.get(url.pathname), fetchImpl: localFetch,
+      onRetry: retry => self.postMessage({ id, event: 'progress', model: 'speech', progress: { status: 'download-retry', ...retry } }),
+    });
   } catch (error) { return Promise.reject(error); }
 };
 
@@ -53,6 +64,7 @@ async function prepareSpeech(profile, id) {
     } catch { /* A CPU model is still entirely on-device. */ }
   }
   let config = speechConfiguration(profile, hasGPU);
+  if (config.device === 'webgpu') env.backends.onnx.wasm.wasmPaths = { mjs: '/runtime/ort-wasm-simd-threaded.asyncify.mjs', wasm: '/runtime/ort-wasm-simd-threaded.asyncify.wasm' };
   if (speechConfig && (speechConfig.key !== config.key || speechConfig.device !== config.device)) {
     await instances.get(`${speechConfig.key}:${speechConfig.device}`)?.dispose();
     instances.delete(`${speechConfig.key}:${speechConfig.device}`);
@@ -85,6 +97,7 @@ function streaming(id, stage, tokenizer, isSpeech = false) {
 }
 
 async function handle({ id, action, payload }) {
+  requestId = id;
   const started = performance.now();
   if (action === 'prepare-speech') return prepareSpeech(payload.speechProfile || (speechConfig?.profile || 'fast'), id);
   if (action === 'prepare-translation') {
@@ -98,10 +111,11 @@ async function handle({ id, action, payload }) {
   if (action === 'transcribe') {
     const desiredProfile = payload.speechProfile || (speechConfig?.profile || 'fast');
     if (!speechConfig || speechConfig.profile !== desiredProfile) await prepareSpeech(desiredProfile, id);
+    let detectedLanguage = payload.language;
     const recognize = async () => {
       const recognizer = await load(speechConfig.key, 'automatic-speech-recognition', id, speechConfig);
       return recognizer(payload.samples, {
-        language: payload.language === 'ko-KR' ? 'korean' : 'english',
+        ...(payload.language === 'auto' ? whisperAutoLanguageOptions(recognizer.model.generation_config, language => { detectedLanguage = language; }) : { language: payload.language === 'ko-KR' ? 'korean' : 'english' }),
         task: 'transcribe', return_timestamps: false, max_new_tokens: 192,
         num_beams: 1, do_sample: false,
         streamer: streaming(id, 'transcript', recognizer.tokenizer, true),
@@ -120,7 +134,7 @@ async function handle({ id, action, payload }) {
       await prepareSpeech(desiredProfile, id);
       result = await recognize();
     }
-    return { text: result.text.trim(), milliseconds: Math.round(performance.now() - started), backend: speechConfig.device, model: speechConfig.key, label: speechConfig.label, notice: speechConfig.notice };
+    return { text: result.text.trim(), language: detectedLanguage, milliseconds: Math.round(performance.now() - started), backend: speechConfig.device, model: speechConfig.key, label: speechConfig.label, notice: speechConfig.notice };
   }
   if (action === 'translate') {
     const key = instances.has('multilingual:wasm') || payload.language === 'en-US' ? 'multilingual' : 'koToEn';

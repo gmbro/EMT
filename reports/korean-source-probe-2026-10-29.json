@@ -1,0 +1,49 @@
+{
+  "synthetic": true,
+  "target": "ko",
+  "echo": false,
+  "events": [
+    {
+      "inputTranscription": {
+        "text": "회의 일정을 내일 오후 3시로",
+        "languageCode": "ko"
+      }
+    },
+    {
+      "outputTranscription": {
+        "languageCode": "ko"
+      }
+    },
+    {
+      "inputTranscription": {
+        "text": " 변경해 주세요.",
+        "languageCode": "ko"
+      }
+    },
+    {
+      "outputTranscription": {
+        "languageCode": "ko"
+      }
+    },
+    {
+      "inputTranscription": {
+        "languageCode": "ko"
+      }
+    },
+    {
+      "outputTranscription": {
+        "languageCode": "ko"
+      }
+    },
+    {
+      "inputTranscription": {
+        "languageCode": "ko"
+      }
+    },
+    {
+      "outputTranscription": {
+        "languageCode": "ko"
+      }
+    }
+  ]
+}

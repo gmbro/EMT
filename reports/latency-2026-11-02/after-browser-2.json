@@ -1,0 +1,6 @@
+[
+  "null",
+  "[\n  {\n    \"id\": \"0aecd1a9-a45c-46f9-a783-782b15f377fd\",\n    \"createdAt\": 1793546802118,\n    \"startedAt\": 19346.905000001192,\n    \"translation\": \"내일까지 회의 안건을 보낼 수 있으신가요?\",\n    \"input\": \"voice\",\n    \"live\": true,\n    \"speechModel\": \"Qwen3-ASR-1.7B\",\n    \"original\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"language\": \"en-US\",\n    \"sourcePending\": false,\n    \"sample\": true,\n    \"captureStartedAt\": 18814.655000001192,\n    \"firstSourceAfterCaptureMs\": 2454,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"firstTranslationAfterCaptureMs\": 3894,\n    \"milliseconds\": 5981,\n    \"translationMilliseconds\": 1319,\n    \"waitMilliseconds\": 0,\n    \"browserUpdates\": 17,\n    \"firstTranslationDomMs\": 3895\n  }\n]",
+  "[]",
+  "[\n  {\n    \"ko\": \"아젠다에 반드시 포함해야 할 특정 안건이 있으신가요?\",\n    \"en\": \"Are there any specific topics that must be included in the agenda?\",\n    \"sourceId\": \"0aecd1a9-a45c-46f9-a783-782b15f377fd\",\n    \"sourceAt\": 1793546802118\n  }\n]"
+]

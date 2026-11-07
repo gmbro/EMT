@@ -1,0 +1,64 @@
+{
+  "origin": "https://emt-theta.vercel.app",
+  "synthetic": true,
+  "verifiedAt": "2026-10-27T23:12:55.074Z",
+  "limits": {
+    "realMicrophone": false,
+    "mobileDevice": false,
+    "longMeeting": false
+  },
+  "release": {
+    "buildId": "979ca2abf744",
+    "sourceHash": "979ca2abf74424bb672ef24b18b332e0ec53dbdfaff2c2fe88cf866391c9c4b4",
+    "appAndApiSourcesMatch": true,
+    "platformConfigDifferences": [
+      "vercel.json"
+    ]
+  },
+  "publicAccess": {
+    "status": 200,
+    "requiresLogin": false,
+    "securityHeaders": true
+  },
+  "health": {
+    "ready": true,
+    "model": "gemini-3.6-flash",
+    "audio": "Google Gemini Live Translate",
+    "translation": "Google Gemini",
+    "store": false
+  },
+  "textTranslation": "우리는 계약을 승인하지 않았습니다. 금요일 전에는 계약금을 지급하지 마십시오.",
+  "voice": [
+    {
+      "language": "en-US",
+      "source": "Could you send me the meeting agenda by tomorrow?",
+      "liveTranslation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "refinedTranslation": "내일까지 회의 안건을 보내주실 수 있나요?"
+    },
+    {
+      "language": "ko-KR",
+      "source": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "liveTranslation": "Could you send me the meeting agenda for tomorrow at 3 PM?",
+      "refinedTranslation": "Please reschedule the meeting to 3:00 PM tomorrow."
+    }
+  ],
+  "voiceConnection": {
+    "twoConcurrentSessions": true,
+    "automaticLanguageSwitch": true,
+    "ephemeralTokens": true
+  },
+  "privateFilesUnavailable": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/tests/meeting-browser.html",
+      "status": 404
+    },
+    {
+      "path": "/reports/google-live-browser-2026-10-28.json",
+      "status": 404
+    }
+  ]
+}

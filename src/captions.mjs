@@ -27,9 +27,10 @@ export function boundCaptionHistory(records, limit = CAPTION_LIMIT) {
 }
 
 export function mutateCaptionHistory(history, mutate) {
-  const result = boundCaptionHistory(mutate(history.records));
-  return { records: result.records, characterCount: result.characterCount,
-    historyTrimmed: history.historyTrimmed + result.removed };
+  // Display windows may be bounded, but the meeting itself must never be evicted.
+  const records = mutate(history.records);
+  return { records, characterCount: records.reduce((sum, row) => sum + captionLength(row), 0),
+    historyTrimmed: history.historyTrimmed || 0 };
 }
 
 /** A throttle, not a debounce: continuous input cannot postpone the first run.
@@ -38,14 +39,14 @@ export function mutateCaptionHistory(history, mutate) {
 export function createLatestTaskRunner({ run, publish, onError = () => {}, canRun = () => true,
   delay = 220, schedule = setTimeout, cancel = clearTimeout }) {
   let latest = null, timer = null, busy = false, generation = 0, disposed = false;
-  const arm = () => {
+  const arm = (wait=delay) => {
     if (disposed || timer !== null || busy || !latest) return;
-    timer = schedule(tick, delay);
+    timer = schedule(tick, wait);
   };
   const tick = async () => {
     timer = null;
     if (disposed || busy || !latest) return;
-    if (!canRun()) { arm(); return; }
+    if (!canRun()) { arm(Math.max(50,delay)); return; }
     const task = latest, current = generation;
     latest = null; busy = true;
     const emit = value => { if (!disposed && current === generation) publish(value, task); };

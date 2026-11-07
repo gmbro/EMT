@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "results": [
+    {
+      "attempt": 0,
+      "resumed": false,
+      "source": "Could you send me the meeting agenda by tomorrow?",
+      "translation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "hasResumeHandle": true,
+      "ready": true,
+      "safeResume": true
+    },
+    {
+      "attempt": 1,
+      "resumed": true,
+      "source": "Could you send me the meeting agenda by tomorrow?",
+      "translation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "hasResumeHandle": true,
+      "ready": true,
+      "safeResume": true
+    }
+  ]
+}

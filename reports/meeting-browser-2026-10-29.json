@@ -1,0 +1,77 @@
+{
+  "synthetic": true,
+  "store": {
+    "imported": 1,
+    "legacyUntouched": true,
+    "afterReload": 2,
+    "rows": 2000,
+    "first": "검증용 한국어 발언 1: 아직 계약을 승인하지 않았습니다.",
+    "last": "Synthetic meeting record 2000: Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. ",
+    "speech": "We have not approved it yet.",
+    "guide": "Could you clarify the scope?",
+    "koreanStatus": "complete"
+  },
+  "records": [
+    {
+      "id": "83e9ee56-e8b2-424d-8275-381cd29d4cec",
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "translation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "createdAt": 1793203768471,
+      "startedAt": 55438.40999996662,
+      "sample": true,
+      "input": "voice",
+      "live": true,
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 3337,
+      "liveFirstTranslationStreamMs": 3541,
+      "liveLastVoiceStreamMs": 2816,
+      "status": "complete",
+      "error": "",
+      "liveFirstTranslationMs": 204,
+      "milliseconds": 3235,
+      "translationMilliseconds": 1584,
+      "waitMilliseconds": 1584
+    },
+    {
+      "id": "793a31f2-0a61-45ef-9dc4-6c8d22462b88",
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "translation": "",
+      "createdAt": 1793203831693,
+      "startedAt": 118660.07499998808,
+      "sample": true,
+      "input": "voice",
+      "live": true,
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 3447,
+      "liveLastVoiceStreamMs": 3328,
+      "status": "complete",
+      "error": ""
+    }
+  ],
+  "speeches": [
+    {
+      "id": "cb177f29-b140-49d6-8b84-5efd405bc65f",
+      "ko": "제안은 이해했습니다. 다만 아직 승인한 것은 아니며, 내부 검토 후 답변드리겠습니다.",
+      "en": "I understand your proposal. However, this is not an approval yet, and we will get back to you after an internal review.",
+      "createdAt": 1793203763591,
+      "status": "complete",
+      "error": ""
+    }
+  ],
+  "replies": [
+    {
+      "ko": "네, 안건의 포함 범위가 전체 논의 항목인지 일부 주요 안건인지 확인해 주시겠습니까?",
+      "en": "Sure, could you clarify if the scope of the agenda includes all discussion items or just the main ones?"
+    },
+    {
+      "ko": "알겠습니다, 안건에서 특별히 우선적으로 다뤄야 할 세부 내용이 있나요?",
+      "en": "Understood, are there specific details or priorities that should be emphasized in the agenda?"
+    },
+    {
+      "ko": "네, 안건 작성 시 선호하시는 특정 양식이나 조건이 있으신가요?",
+      "en": "Got it, do you have any specific format conditions or preferences for the agenda?"
+    }
+  ]
+}

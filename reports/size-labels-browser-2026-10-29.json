@@ -1,0 +1,182 @@
+{
+  "initialDefault": "1",
+  "cases": [
+    {
+      "label": "−",
+      "roomWidth": 1280,
+      "size": "2",
+      "source": "13px",
+      "translation": "14px",
+      "viewportWidth": 1280
+    },
+    {
+      "label": "기본",
+      "roomWidth": 1280,
+      "size": "1",
+      "source": "14px",
+      "translation": "16px",
+      "viewportWidth": 1280
+    },
+    {
+      "label": "+",
+      "roomWidth": 1280,
+      "size": "0",
+      "source": "16px",
+      "translation": "18px",
+      "viewportWidth": 1280
+    }
+  ],
+  "persistedAfterReload": "0",
+  "mobile": [
+    {
+      "width": 320,
+      "height": 740,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "true",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "false",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 320
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "true",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "false",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 320
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "false",
+          "width": 46.203125
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "true",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 320
+    },
+    {
+      "width": 390,
+      "height": 420,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "true",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "false",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 390
+    },
+    {
+      "width": 390,
+      "height": 420,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "true",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "false",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 390
+    },
+    {
+      "width": 390,
+      "height": 420,
+      "buttons": [
+        {
+          "height": 44,
+          "label": "−",
+          "selected": "false",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "label": "기본",
+          "selected": "false",
+          "width": 46.203125
+        },
+        {
+          "height": 44,
+          "label": "+",
+          "selected": "true",
+          "width": 44
+        }
+      ],
+      "scrollWidth": 390
+    }
+  ]
+}

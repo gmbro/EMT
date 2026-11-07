@@ -1,0 +1,63 @@
+{
+  "synthetic": true,
+  "records": [
+    {
+      "id": "c6dd3d36-7d78-432e-9f64-6e4f658aeffa",
+      "createdAt": 1793205640916,
+      "startedAt": 28509.150000035763,
+      "translation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "input": "voice",
+      "sample": true,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 1016,
+      "liveLastVoiceStreamMs": 2816,
+      "captureStartedAt": 27352.69999998808,
+      "firstSourceAfterCaptureMs": 1157,
+      "status": "complete",
+      "error": "",
+      "firstTranslationAfterCaptureMs": 3299,
+      "milliseconds": 4721,
+      "translationMilliseconds": 1499,
+      "waitMilliseconds": 0,
+      "browserUpdates": 22
+    },
+    {
+      "id": "cb734763-0022-4c58-b76a-70eab6f8e14e",
+      "createdAt": 1793205646016,
+      "startedAt": 33608.96500003338,
+      "translation": "",
+      "input": "voice",
+      "sample": true,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "liveFirstSourceStreamMs": 6116,
+      "liveLastVoiceStreamMs": 7808,
+      "captureStartedAt": 27352.69999998808,
+      "firstSourceAfterCaptureMs": 6257,
+      "status": "complete",
+      "error": "",
+      "browserUpdates": 8
+    }
+  ],
+  "replies": [
+    {
+      "ko": "알겠습니다. 이번 회의 안건에 포함할 논의 범위가 어떻게 되나요?",
+      "en": "Understood. What is the scope of discussions to be included in this meeting agenda?"
+    },
+    {
+      "ko": "확인했습니다. 안건 작성 시 가장 우선적으로 다뤄야 할 세부 항목이 있나요?",
+      "en": "Got it. Are there specific details or priorities we should focus on for the agenda?"
+    },
+    {
+      "ko": "알겠습니다. 안건을 작성할 때 따로 고려해야 할 조건이나 선호 사항이 있으신가요?",
+      "en": "Understood. Are there any particular conditions or preferences to keep in mind for the agenda?"
+    }
+  ]
+}

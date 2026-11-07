@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-01",
+  "scope": "local only",
+  "url": "http://localhost:4173/",
+  "tests": 140,
+  "build": "passed",
+  "ui": {
+    "sourceTranslationPaired": true,
+    "captionPixels": [
+      8,
+      10,
+      12
+    ],
+    "defaultCaptionPx": 10,
+    "desktopFooterPx": 42,
+    "mobileFooterPx": 48,
+    "bothPanelsIndependentlyHideable": true,
+    "visiblePairsWithPanels": 20,
+    "sourceTranslationResize": true,
+    "guideHeightResize": true
+  },
+  "guide": {
+    "input": "Can you approve the six-week implementation schedule today?",
+    "context": "Contract not approved; security review required before implementation; six-week estimate is not a commitment.",
+    "actualEnglish": "We cannot approve it today because the security review must take place before implementation. Could you confirm whether the six-week estimate includes the security review?",
+    "alternativesGenerated": 2,
+    "manualAssessment": "Reflects security review and avoids inventing an approval or a future commitment. Synthetic scenario only."
+  },
+  "speech": {
+    "input": "보안 검토가 끝나기 전에는 일정을 확정할 수 없습니다.",
+    "output": "We cannot finalize the schedule until the security review is complete."
+  },
+  "exports": {
+    "formats": [
+      "txt",
+      "docx",
+      "json"
+    ],
+    "browserDocxDownload": true,
+    "docxXmlValidated": true,
+    "guideExcludedByDefault": true
+  },
+  "transcriptionOnly": {
+    "syntheticEnglishAudioProcessed": true,
+    "translation": "",
+    "status": "complete",
+    "persistedAsTranscriptOnly": true
+  },
+  "limits": [
+    "No physical microphone or Edge/device-specific session tested in this UI pass",
+    "Mobile CSS viewport/frame test, not physical phone",
+    "Previous first-translation target remains unmet; no new latency claim",
+    "No audio replay, diarization or AI summary implemented; planned later phase"
+  ]
+}

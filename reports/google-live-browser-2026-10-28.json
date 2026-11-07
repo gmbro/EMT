@@ -1,0 +1,35 @@
+{
+  "synthetic": true,
+  "environment": "Codex in-app browser; fixed audio fixtures through AudioWorklet; not a microphone meeting",
+  "timingDefinition": "Stream times include fixture padding. LastVoice is the last 100 ms frame above RMS 0.012. First translation is provisional; final refinement is measured separately.",
+  "results": [
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "translation": "내일까지 회의 안건을 보내주실 수 있나요?",
+      "status": "complete",
+      "milliseconds": 3683,
+      "translationMilliseconds": 1744,
+      "waitMilliseconds": 1744,
+      "liveFirstSourceStreamMs": 3124,
+      "liveFirstTranslationStreamMs": 3321,
+      "liveLastVoiceStreamMs": 2816,
+      "firstTranslationAfterLastVoiceMs": 505,
+      "refinedAfterLastVoiceMs": 3991
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "translation": "Please reschedule the meeting to 3 PM tomorrow.",
+      "status": "complete",
+      "milliseconds": 4994,
+      "translationMilliseconds": 3367,
+      "waitMilliseconds": 3368,
+      "liveFirstSourceStreamMs": 3339,
+      "liveFirstTranslationStreamMs": 3537,
+      "liveLastVoiceStreamMs": 3328,
+      "firstTranslationAfterLastVoiceMs": 209,
+      "refinedAfterLastVoiceMs": 5005
+    }
+  ]
+}

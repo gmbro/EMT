@@ -1,0 +1,42 @@
+{
+  "url": "https://emt-theta.vercel.app",
+  "deploymentId": "dpl_G4E5U2NaVtVxtFDobgtC2oJpiArz",
+  "checkedAt": "2026-10-30T21:20:05.770Z",
+  "buildId": "045f02a4d5c3",
+  "homeStatus": 200,
+  "versionStatus": 200,
+  "mismatches": [
+    "vercel.json"
+  ],
+  "assets": [
+    {
+      "path": "/assets/index-DOTa_ABn.js",
+      "status": 200
+    },
+    {
+      "path": "/assets/index-0L1OlB6f.css",
+      "status": 200
+    }
+  ],
+  "testsPassed": 134,
+  "browserChecks": {
+    "synthetic2000Rows": true,
+    "returnToLiveRemainingPixels": 0,
+    "mobile390Overflow": false,
+    "productionKoreanToEnglish": true,
+    "consoleErrors": []
+  },
+  "performanceLimits": {
+    "firstSourceMs": 712,
+    "measurement": "single synthetic speech run, after connection setup",
+    "firstTranslationUnder2sVerified": false,
+    "endurance120min": "running; transcription only; no physical microphone or translation endurance verification"
+  },
+  "changes": [
+    "continuous transcript scrolling with offscreen rendering optimization",
+    "150ms preview scheduling",
+    "interim source styling and input status",
+    "reply source timestamp",
+    "per-meeting glossary persistence"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "synthetic": true,
+  "physicalMicrophone": false,
+  "origin": "http://localhost:5173",
+  "rows": [
+    {
+      "id": "b18d2609-e256-447a-be33-364ac1c78696",
+      "createdAt": 1793360114885,
+      "startedAt": 2386.445,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+      "liveFirstSourceStreamMs": 686,
+      "liveLastVoiceStreamMs": 2352
+    },
+    {
+      "id": "6b2b7663-a7e4-4d19-866b-df24aa1b6306",
+      "createdAt": 1793360143518,
+      "startedAt": 31019.176625,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "stableOriginal": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "liveFirstSourceStreamMs": 29319,
+      "liveLastVoiceStreamMs": 30786
+    }
+  ],
+  "errors": [],
+  "statuses": [],
+  "usage": {
+    "audio": {
+      "capturedSeconds": 32.6119375,
+      "sentSeconds": 8,
+      "reconnections": 0,
+      "usageReports": 0
+    },
+    "requests": 0,
+    "unknown": 0,
+    "failures": 0,
+    "input": 0,
+    "output": 0,
+    "cached": 0,
+    "tasks": {}
+  }
+}

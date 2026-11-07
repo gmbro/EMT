@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-28T23:01:45.256Z",
+  "deploymentId": "dpl_LHct49fFhCSbcQ1vrARvAeYvgxhc",
+  "production": "https://emt-theta.vercel.app",
+  "localBuildId": "dc0ef84cac1d",
+  "productionBuildId": "66f4805fb192",
+  "sourceDifferences": [
+    "vercel.json"
+  ],
+  "allAppAndApiSourcesMatch": true,
+  "requests": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "bytes": 685
+    },
+    {
+      "path": "/version.json?v=1793228504046",
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "cache": "no-store",
+      "bytes": 4490
+    },
+    {
+      "path": "/fonts/PretendardVariable-9599f12fd42f.woff2",
+      "status": 200,
+      "type": "font/woff2",
+      "cache": "public, max-age=31536000, immutable",
+      "bytes": 2057688
+    },
+    {
+      "path": "/.env.local",
+      "status": 404,
+      "type": "text/plain; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "bytes": 79
+    },
+    {
+      "path": "/tests/responsive-browser.html",
+      "status": 404,
+      "type": "text/plain; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "bytes": 79
+    }
+  ],
+  "font": {
+    "sha256": "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
+    "expectedSha256": "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4"
+  },
+  "fontPreloaded": true,
+  "assets": [
+    {
+      "path": "/assets/index-Br4RASbQ.js",
+      "status": 200
+    },
+    {
+      "path": "/assets/index-D6SNVLHx.css",
+      "status": 200
+    }
+  ]
+}

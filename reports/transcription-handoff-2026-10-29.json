@@ -1,0 +1,203 @@
+{
+  "synthetic": true,
+  "origin": "http://localhost:5173",
+  "forcedRotationMs": 6000,
+  "connections": 2,
+  "errors": [],
+  "records": [
+    {
+      "id": "33b10a4f-61ac-4711-8838-13368a46a294",
+      "createdAt": 1793459526499,
+      "startedAt": 2137.038875,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+      "liveFirstSourceStreamMs": 670,
+      "liveLastVoiceStreamMs": 2345
+    },
+    {
+      "id": "7e5bc020-ae93-4c2a-a19b-211ca10c0494",
+      "createdAt": 1793459532691,
+      "startedAt": 8329.056,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "language": "ko-KR",
+      "sourcePending": false,
+      "stableOriginal": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "liveFirstSourceStreamMs": 6862,
+      "liveLastVoiceStreamMs": 8537
+    },
+    {
+      "id": "f4a4ed8c-3bd7-46bb-b54e-6258ea3cf2e4",
+      "createdAt": 1793459539019,
+      "startedAt": 14657.421292,
+      "translation": "",
+      "input": "voice",
+      "sample": false,
+      "live": true,
+      "speechModel": "transcribe",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "language": "en-US",
+      "sourcePending": false,
+      "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+      "liveFirstSourceStreamMs": 13191,
+      "liveLastVoiceStreamMs": 14217
+    }
+  ],
+  "updates": [
+    {
+      "language": "en-US",
+      "original": "Could you",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 670,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 670,
+      "sourcePending": false
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "ms": 6862,
+      "sourcePending": true
+    },
+    {
+      "language": "ko-KR",
+      "original": "회의 일정을 내일 오후 3시로 변경해 주세요.",
+      "ms": 6862,
+      "sourcePending": false
+    },
+    {
+      "language": "en-US",
+      "original": "Could",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 13191,
+      "sourcePending": true
+    },
+    {
+      "language": "en-US",
+      "original": "Could you send me the meeting agenda by tomorrow?",
+      "ms": 13191,
+      "sourcePending": false
+    }
+  ]
+}

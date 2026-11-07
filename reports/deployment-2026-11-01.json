@@ -1,0 +1,23 @@
+{
+  "url": "https://emt-theta.vercel.app",
+  "buildId": "6bcf4a3b9ae0",
+  "http": 200,
+  "assets": [
+    {
+      "path": "/assets/index-D3mtiqnL.js",
+      "status": 200
+    },
+    {
+      "path": "/assets/index-0L1OlB6f.css",
+      "status": 200
+    }
+  ],
+  "mismatches": [
+    "vercel.json"
+  ],
+  "tests": 136,
+  "liveReconnectTest": "two real connections; en-ko-en; no errors",
+  "latencyMedianMs": 3073,
+  "latencyGoalMet": false,
+  "endurance": "prior run failed at 590.54 seconds; renewal fallback patched; fresh transcription-only 120min run started"
+}

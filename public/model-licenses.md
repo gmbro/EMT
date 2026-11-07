@@ -1,6 +1,6 @@
-# 기기 내 모델과 실행 환경의 출처 및 라이선스
+# 모델·라이브러리의 출처 및 라이선스
 
-이 웹사이트가 제공하는 모델 파일은 아래 공개 모델의 ONNX 변환·양자화 파일입니다. 모델 파일만 이 사이트에서 다운로드하며, 회의 음성·전사·번역을 모델 제공자에게 전송하지 않습니다. 아래의 고정 리비전에서 파일을 가져오며, 배포 준비 시 파일 크기와 SHA-256을 검증합니다. 모델의 이름이나 공급자는 이 웹사이트를 후원하거나 보증하지 않습니다.
+현재 웹앱은 사용자가 허용한 Google Gemini로 회의 음성과 텍스트를 전송해 통역합니다. 브라우저 음성 모델 다운로드는 필요하지 않습니다. 음성에는 [Google Live Transcribe](https://ai.google.dev/gemini-api/docs/live-api/live-transcribe) (`gemini-3.5-transcribe-live`), 최종 문장 보정과 가이드에는 Gemini Flash를 사용합니다. 아래 표와 라이선스는 이전 기기 내 모델 경로 및 선택적 기준선 평가를 재현하기 위해 보존합니다. 고정 리비전·파일 크기·SHA-256 검증은 선택적 모델 준비 스크립트에서 수행합니다. 공급자가 이 웹사이트를 후원하거나 보증한다는 뜻은 아닙니다.
 
 | 기능 | 원본 모델 / 제작자 | 배포하는 변환 파일 / 고정 리비전 | 라이선스 |
 | --- | --- | --- | --- |
@@ -12,9 +12,9 @@
 
 ONNX 변환과 4-bit/8-bit 양자화는 위 변환 저장소의 게시자가 수행했습니다. 이 웹사이트는 해당 고정 리비전의 파일을 다시 학습하거나 변경하지 않고 배포합니다. 변환 모델 저장소의 README도 각 모델 파일 경로에 포함됩니다.
 
-고정밀 모드는 WebGPU에서 809M 매개변수의 Whisper Large v3 Turbo를 q4로 실행합니다. fp16 활성화를 사용하는 q4f16은 사용하지 않습니다. GPU가 없거나 실행에 실패하면 244M Whisper Small q8 CPU 모델을 사용하며 화면에 실제 모델을 표시합니다(Base는 74M). 음성 모델 다운로드는 Turbo 약 764 MB, Small 약 254 MB이며, 실행 환경 약 29 MB와 번역 모델은 별도입니다. 더 큰 모델의 정확도와 속도는 기기·발화에 따라 다르며, 특정 정확도나 실시간 속도를 보장하지 않습니다.
+이전 버전의 고정밀 모드는 WebGPU에서 809M 매개변수의 Whisper Large v3 Turbo를 q4로 실행했습니다. 이전 기기 내 음성 경로는 브라우저 로컬 인식 또는74M Whisper Base q8를 사용했습니다. 현재 제품 기본 경로는 Google 음성 API입니다. 아래의 고정밀 모드 설명은 이전 버전 참고 자료입니다. fp16 활성화를 사용하는 q4f16은 사용하지 않습니다. GPU가 없거나 실행에 실패하면 244M Whisper Small q8 CPU 모델을 사용하며 화면에 실제 모델을 표시합니다(Base는 74M). 음성 모델 다운로드는 Turbo 약 764 MB, Small 약 254 MB이며, 실행 환경 약 29 MB와 번역 모델은 별도입니다. 더 큰 모델의 정확도와 속도는 기기·발화에 따라 다르며, 특정 정확도나 실시간 속도를 보장하지 않습니다.
 
-실행 라이브러리 [Transformers.js](https://github.com/huggingface/transformers.js)는 Apache-2.0, [ONNX Runtime](https://github.com/microsoft/onnxruntime)은 MIT입니다. 설치된 라이브러리와 정확히 일치하는 ONNX Runtime JavaScript/WASM 파일을 이 사이트에서 제공합니다. 배포된 ONNX Runtime 버전은 `/runtime/version.json`에서 확인할 수 있습니다.
+실행 라이브러리 [Transformers.js](https://github.com/huggingface/transformers.js)는 Apache-2.0, [ONNX Runtime](https://github.com/microsoft/onnxruntime)은 MIT입니다. 선택적 기기 모델 준비 시 설치된 라이브러리와 일치하는 ONNX Runtime JavaScript/WASM 파일을 생성합니다. 해당 버전은 `/runtime/version.json`에서 확인할 수 있습니다. 현재 Google 통역 경로는 이 런타임을 로드하지 않습니다.
 
 ## Whisper — MIT
 
@@ -301,3 +301,7 @@ Apache License
    See the License for the specific language governing permissions and
    limitations under the License.
 ```
+
+## 웹 글꼴
+
+브라우저와 운영체제에 따른 글꼴 차이를 줄이기 위해 [Pretendard Variable](https://github.com/orioncactus/pretendard)을 같은 사이트에서 제공합니다. SIL Open Font License 1.1이며 [라이선스 전문](/fonts/OFL.txt)과 [고정 소스 리비전](/fonts/source.json)을 함께 배포합니다. 브라우저는 외부 글꼴 CDN에 접속하지 않습니다.

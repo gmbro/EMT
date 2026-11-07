@@ -1,0 +1,35 @@
+{
+  "layoutResults": [
+    {
+      "dialogWidth": 1440,
+      "guideVisible": true,
+      "overflow": false,
+      "sourceFont": "14px",
+      "width": 1440
+    },
+    {
+      "dialogWidth": 390,
+      "guideVisible": true,
+      "overflow": false,
+      "sourceFont": "14px",
+      "width": 390
+    },
+    {
+      "dialogWidth": 768,
+      "guideVisible": true,
+      "overflow": false,
+      "sourceFont": "14px",
+      "width": 768
+    }
+  ],
+  "storeAndEnglishSample": [
+    "{\n  \"imported\": 1,\n  \"legacyUntouched\": true,\n  \"afterReload\": 2,\n  \"rows\": 2000,\n  \"first\": \"검증용 한국어 발언 1: 아직 계약을 승인하지 않았습니다.\",\n  \"last\": \"Synthetic meeting record 2000: Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. \",\n  \"speech\": \"We have not approved it yet.\",\n  \"guide\": \"Could you clarify the scope?\",\n  \"koreanStatus\": \"complete\"\n}",
+    "[\n  {\n    \"id\": \"75b5a0d5-be40-4192-b44a-f0aa936c72f1\",\n    \"createdAt\": 1793291079390,\n    \"startedAt\": 10099.804999999702,\n    \"translation\": \"내일까지 회의 안건을 보내주시겠습니까?\",\n    \"input\": \"voice\",\n    \"sample\": true,\n    \"live\": true,\n    \"speechModel\": \"transcribe\",\n    \"original\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"language\": \"en-US\",\n    \"sourcePending\": false,\n    \"stableOriginal\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"liveFirstSourceStreamMs\": 394,\n    \"liveLastVoiceStreamMs\": 644,\n    \"captureStartedAt\": 7389.449999999255,\n    \"firstSourceAfterCaptureMs\": 2711,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"firstTranslationAfterCaptureMs\": 6299,\n    \"milliseconds\": 3624,\n    \"translationMilliseconds\": 1936,\n    \"waitMilliseconds\": 0,\n    \"browserUpdates\": 11\n  }\n]",
+    "[]",
+    "[]"
+  ],
+  "consoleErrors": [],
+  "physicalMobile": false,
+  "chrome": "extension localhost access restricted by policy",
+  "edge": "not available in browser inventory"
+}

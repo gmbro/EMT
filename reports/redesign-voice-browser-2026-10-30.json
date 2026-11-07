@@ -1,0 +1,42 @@
+{
+  "syntheticAudio": true,
+  "physicalMicrophone": false,
+  "results": [
+    "{\n  \"imported\": 1,\n  \"legacyUntouched\": true,\n  \"afterReload\": 2,\n  \"rows\": 2000,\n  \"first\": \"검증용 한국어 발언 1: 아직 계약을 승인하지 않았습니다.\",\n  \"last\": \"Synthetic meeting record 2000: Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. \",\n  \"speech\": \"We have not approved it yet.\",\n  \"guide\": \"Could you clarify the scope?\",\n  \"koreanStatus\": \"complete\"\n}",
+    "[\n  {\n    \"id\": \"75b5a0d5-be40-4192-b44a-f0aa936c72f1\",\n    \"createdAt\": 1793291079390,\n    \"startedAt\": 10099.804999999702,\n    \"translation\": \"내일까지 회의 안건을 보내주시겠습니까?\",\n    \"input\": \"voice\",\n    \"sample\": true,\n    \"live\": true,\n    \"speechModel\": \"transcribe\",\n    \"original\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"language\": \"en-US\",\n    \"sourcePending\": false,\n    \"stableOriginal\": \"Could you send me the meeting agenda by tomorrow?\",\n    \"liveFirstSourceStreamMs\": 394,\n    \"liveLastVoiceStreamMs\": 644,\n    \"captureStartedAt\": 7389.449999999255,\n    \"firstSourceAfterCaptureMs\": 2711,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"firstTranslationAfterCaptureMs\": 6299,\n    \"milliseconds\": 3624,\n    \"translationMilliseconds\": 1936,\n    \"waitMilliseconds\": 0,\n    \"browserUpdates\": 11\n  }\n]",
+    "[\n  {\n    \"id\": \"8e881965-77d2-4db9-ba56-db9c1ce8b8a4\",\n    \"ko\": \"회의 일정을 내일 오후 3시로 변경해 주세요.\",\n    \"en\": \"Please reschedule the meeting to 3 PM tomorrow.\",\n    \"createdAt\": 1793291290261,\n    \"status\": \"complete\",\n    \"error\": \"\",\n    \"input\": \"voice\"\n  }\n]",
+    "[]"
+  ],
+  "errors": [
+    {
+      "level": "error",
+      "message": "Warning: You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot() before. Instead, call root.render() on the existing root instead if you want to update it.",
+      "timestamp": "2026-10-29T16:21:49.690Z",
+      "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SVG7M4VJ.js?v=0273c99d"
+    },
+    {
+      "level": "error",
+      "message": "Warning: You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot() before. Instead, call root.render() on the existing root instead if you want to update it.",
+      "timestamp": "2026-10-29T16:21:55.446Z",
+      "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SVG7M4VJ.js?v=0273c99d"
+    },
+    {
+      "level": "error",
+      "message": "Warning: You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot() before. Instead, call root.render() on the existing root instead if you want to update it.",
+      "timestamp": "2026-10-29T16:23:02.992Z",
+      "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SVG7M4VJ.js?v=0273c99d"
+    },
+    {
+      "level": "error",
+      "message": "Warning: You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot() before. Instead, call root.render() on the existing root instead if you want to update it.",
+      "timestamp": "2026-10-29T16:23:43.038Z",
+      "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SVG7M4VJ.js?v=0273c99d"
+    },
+    {
+      "level": "error",
+      "message": "Warning: You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot() before. Instead, call root.render() on the existing root instead if you want to update it.",
+      "timestamp": "2026-10-29T16:24:22.423Z",
+      "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SVG7M4VJ.js?v=0273c99d"
+    }
+  ]
+}

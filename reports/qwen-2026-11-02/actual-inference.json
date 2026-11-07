@@ -1,0 +1,27 @@
+{
+  "synthetic": true,
+  "model": "Qwen3-ASR-1.7B-bf16 via MLX",
+  "method": "Pre-recorded complete English/Korean WAV via local HTTP, includes inference but not realtime audio capture delay",
+  "results": [
+    {
+      "language": "en",
+      "audioSeconds": 2.55225,
+      "text": "Could you send me the meeting agenda by tomorrow?",
+      "firstMs": 1195,
+      "totalMs": 1610,
+      "modelMs": 1571
+    },
+    {
+      "language": "ko",
+      "audioSeconds": 3.0596875,
+      "text": "회의 일정을 내일 오후 세시로 변경해 주세요.",
+      "firstMs": 441,
+      "totalMs": 1097,
+      "modelMs": 1088
+    }
+  ],
+  "security": {
+    "foreignOrigin": 403,
+    "invalidAudio": 400
+  }
+}
