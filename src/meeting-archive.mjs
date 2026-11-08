@@ -23,5 +23,5 @@ export function saveMeetings(storage, sessions) { storage.setItem(ARCHIVE_KEY, J
 export function detectCaptionLanguage(text, fallback = 'en-US') {
   const korean = (text.match(/[가-힣]/gu) || []).length;
   const latin = (text.match(/[a-z]/giu) || []).length;
-  return korean >= 2 && korean >= latin * .15 ? 'ko-KR' : latin ? 'en-US' : fallback === 'auto' ? 'en-US' : fallback;
+  return (korean>0 && latin===0) || (korean >= 2 && korean >= latin * .15) ? 'ko-KR' : latin ? 'en-US' : fallback === 'auto' ? 'en-US' : fallback;
 }

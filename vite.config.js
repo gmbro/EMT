@@ -20,7 +20,7 @@ const fileDigests = sourceFiles.map(path => {
   return { path, sha256: createHash('sha256').update(body).digest('hex') };
 });
 const sourceHash = sourceDigest.digest('hex');
-const release = { buildId: sourceHash.slice(0, 12), sourceHash, files: fileDigests, builtAt: new Date().toISOString(), speech: 'google-live-transcribe', translation: 'gemini-3.6-flash' };
+const release = { buildId: sourceHash.slice(0, 12), sourceHash, files: fileDigests, builtAt: new Date().toISOString(), speech: process.env.DEEPGRAM_API_KEY?'deepgram-nova-3':'google-live-transcribe', translation: 'gemini-3.6-flash' };
 
 const localTranslation = () => {
   const getKey = () => {
@@ -28,7 +28,7 @@ const localTranslation = () => {
     return process.env.google_api || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || env.google_api || env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
   };
   const handler = createHandler({ getKey });
-  const liveHandler = createLiveHandler({ getKey });
+  const liveHandler = createLiveHandler({ getKey, getDeepgramKey:()=>process.env.DEEPGRAM_API_KEY||loadEnv('development',process.cwd(),'').DEEPGRAM_API_KEY });
   return { name: 'local-gemini-translation', configureServer(server) {
     // ONNX imports a same-origin public ESM file with ?import. Vite's normal
     // transform route rejects imports from public/, so serve only these pinned

@@ -41,3 +41,14 @@ test('already-open older tabs keep their fixed translation protocol while new cl
  for(const body of [{target:'ko'},{target:'ko',language:'auto',vocabulary:[]}]){const res=new Reply();await handler(req(body),res);assert.equal(res.statusCode,200);}
  assert.equal(requests[0].bidiGenerateContentSetup.model,'models/gemini-3.5-live-translate-preview');assert.equal(requests[0].bidiGenerateContentSetup.generationConfig.translationConfig.targetLanguageCode,'ko');assert.equal(requests[1].bidiGenerateContentSetup.model,LIVE_MODEL);assert.deepEqual(requests[1].bidiGenerateContentSetup.generationConfig.responseModalities,['TEXT']);
 });
+
+test('Deepgram grants expose only the temporary credential and enforce the same origin check',async()=>{
+  let calls=0;
+  const handler=createHandler({getDeepgramKey:()=>'server-secret',fetchImpl:async(url,opts)=>{
+    calls++;assert.equal(url,'https://api.deepgram.com/v1/auth/grant');assert.equal(opts.headers.Authorization,'Token server-secret');
+    return Response.json({access_token:'short-lived'});
+  }});
+  const denied=new Reply();await handler(req({provider:'deepgram'},{headers:{host:'app.test',origin:'https://other.test'}}),denied);
+  assert.equal(denied.statusCode,403);assert.equal(calls,0);
+  const ok=new Reply();await handler(req({provider:'deepgram'}),ok);assert.deepEqual(JSON.parse(ok.body),{token:'short-lived'});
+});

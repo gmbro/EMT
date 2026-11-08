@@ -18,11 +18,11 @@ export class MeetingEngine {
   get client() { return this.modelClient ||= new ModelClient(); }
   // Recognition must never sit behind a long translation in one worker queue.
   get translationClient() { return this.mtClient ||= new ModelClient(); }
-  async prepare(language, { source = 'microphone', portable = false, speechProfile = 'fast', translationEnabled = true, onProgress, onStatus } = {}) {
+  async prepare(language, { speechProvider='google', source = 'microphone', portable = false, speechProfile = 'fast', translationEnabled = true, onProgress, onStatus } = {}) {
     if (this.cloudSpeech) {
       const translation = translationEnabled ? await this.prepareTranslation(language, { onProgress, onStatus }) : '받아쓰기 전용';
       this.language = language;
-      return { speech: LOCAL_QWEN ? 'Qwen3-ASR 1.7B · 이 컴퓨터' : 'Google Gemini Live Transcribe', translation, cloudSpeech: true, notice: '' };
+      return { speech: LOCAL_QWEN ? 'Qwen3-ASR 1.7B · 이 컴퓨터' : speechProvider==='deepgram' ? 'Deepgram Nova-3 · 자동 화자 분리' : 'Google Gemini Live Transcribe', translation, cloudSpeech: true, notice: '' };
     }
     this.portable = portable;
     this.speechProfile = speechProfile;

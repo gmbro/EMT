@@ -9,7 +9,7 @@ export async function createGoogleLive({onUpdate,onFinal,onError,sample=false,si
   const health=createSpeechHealth({now}), metricId=crypto.randomUUID();
   let capturedSamples=0,sentSamples=0,reconnections=0,usageReports=0;
   const report=()=>recordAudioUsage(metricId,{capturedSeconds:capturedSamples/16000,sentSeconds:sentSamples/16000,reconnections,usageReports});
-  let watchdog,stopTask,closed=false,finishing=false,failureSent=false,lastText=performance.now(),lastVoice=0,firstFrame=0;
+  let delayed=false,watchdog,stopTask,closed=false,finishing=false,failureSent=false,lastText=performance.now(),lastVoice=0,firstFrame=0;
   const fail=message=>{if(closed||finishing||failureSent)return;failureSent=true;for(const c of channels)c.assembler.flush();report();onError(new Error(message));};
   const abort=()=>{report();closed=true;cancelWatch(watchdog);for(const cancel of setupCancels)cancel();setupCancels.clear();for(const c of channels){clearTimeout(c.renewTimer);c.assembler.dispose();c.buffer.length=0;c.socket?.close();}};
   const timed=record=>({...record,liveFirstSourceStreamMs:Math.round(record.startedAt-firstFrame),liveFirstTranslationStreamMs:record.liveFirstTranslationMs===undefined?undefined:Math.round(record.startedAt-firstFrame+record.liveFirstTranslationMs),liveLastVoiceStreamMs:lastVoice?Math.round(lastVoice-firstFrame):undefined});
@@ -40,7 +40,7 @@ export async function createGoogleLive({onUpdate,onFinal,onError,sample=false,si
           if(message.error){setupFailure();return;}
           if(message.sessionResumptionUpdate){const u=message.sessionResumptionUpdate;channel.canResume=Boolean(u.resumable&&u.newHandle);if(channel.canResume)channel.resumeHandle=u.newHandle;if(channel.renewRequested&&channel.canResume)void renew(channel);}
           if(message.usageMetadata){usageReports++;report();}
-          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=performance.now();health.response();}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();}}
+          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=performance.now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();}}
           if(message.goAway){channel.renewRequested=true;const ms=Math.max(1000,(parseFloat(message.goAway.timeLeft)||20)*1000-2000);clearTimeout(channel.renewTimer);channel.renewTimer=setTimeout(()=>void renew(channel,!channel.canResume),ms);if(channel.canResume)void renew(channel);else if(channel.assembler.idle)void renew(channel,true);}
         }catch{setupFailure();}
       });
@@ -89,7 +89,7 @@ export async function createGoogleLive({onUpdate,onFinal,onError,sample=false,si
     report();if(finishing||closed)return;
     for(const channel of channels)if(performance.now()-channel.connectedAt>rotateAfterMs && channel.assembler.idle && performance.now()-lastVoice>1500)void renew(channel,true);
     const action=health.check();
-    if(action==='finalize')endAudio();
+    if(action==='finalize'){delayed=true;onStatus('음성 입력이 있지만 받아쓰기가 지연되고 있어요. 마지막 인식 '+new Date(Date.now()-(performance.now()-lastText)).toLocaleTimeString('ko-KR'));endAudio();}
     if(action==='recover')for(const channel of channels)void renew(channel,!channel.canResume);
   },1000);
   return {push:samples=>framer.push(samples),async stop({flush=true}={}){

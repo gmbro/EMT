@@ -1,3 +1,5 @@
+import {createDeepgramLive} from './deepgram-live.mjs';
+import {englishForTranslation} from './streaming-transcript.mjs';
 import {createQwenLive,LOCAL_QWEN} from './qwen-live.mjs';
 import {canPublishPreview,needsPreview,canStartPreview,canContinueFinalPreview} from './preview-policy.mjs';
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +20,15 @@ import { usageSummary, subscribeUsage } from './request-metrics.mjs';
 import { createGoogleLive } from './google-live.js';
 
 export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
+  const [speechProvider,setSpeechProvider]=useState(LOCAL_QWEN?'qwen':'pending');
+  useEffect(()=>{
+    if(LOCAL_QWEN)return;
+    const controller=new AbortController();
+    fetch('/api/live-token?provider',{signal:controller.signal}).then(r=>r.json())
+      .then(data=>setSpeechProvider(data.provider==='deepgram'?'deepgram':'google'))
+      .catch(()=>{if(!controller.signal.aborted)setSpeechProvider('google');});
+    return ()=>controller.abort();
+  },[]);
   const displayOptions=useRef({transcribeOnly,guidesEnabled});displayOptions.current={transcribeOnly,guidesEnabled};
   const [language, setLanguage] = useState('auto');
   const [draftLanguage, setDraftLanguage] = useState('en-US');
@@ -147,7 +158,18 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     historyRef.current = next; setHistory(next); revision.current++;
   };
   function publishHistory(next) { historyRef.current = next; setHistory(next); revision.current++; }
+  const [currentSpeaker,setCurrentSpeaker]=useState('');
+  const speakerRef=useRef('');
+  function selectSpeaker(value) {
+    speakerRef.current=value;
+    setCurrentSpeaker(value);
+  }
+  function assignSpeaker(ids,value) {
+    const selected=new Set(ids);
+    mutateHistory(rows=>rows.map(row=>selected.has(row.id)?{...row,speakerId:value,speakerManual:true}:row));
+  }
   function appendRecord(record) {
+    if(speakerRef.current)record={...record,speakerId:speakerRef.current,speakerManual:true};
     const current = historyRef.current, records = [...current.records];
     const index = records.findIndex(row => row.createdAt > record.createdAt);
     records.splice(index < 0 ? records.length : index, 0, record);
@@ -157,6 +179,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     const current = historyRef.current, index = current.records.findIndex(row => row.id === id);
     if (index < 0) return;
     const previous = current.records[index], record = { ...previous, ...update }, records = [...current.records];
+    if(previous.speakerManual)record.speakerId=previous.speakerId;
     records[index] = record;
     const delta = record.original === previous.original && record.translation === previous.translation ? 0 : captionLength(record) - captionLength(previous);
     publishHistory({ ...current, records, characterCount: current.characterCount + delta });
@@ -190,7 +213,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       if (!window.isSecureContext || !window.WebSocket || !(window.AudioContext||window.webkitAudioContext) || !window.AudioWorkletNode || !navigator.mediaDevices?.getUserMedia) throw new Error('HTTPS와 실시간 오디오를 지원하는 최신 브라우저에서 열어주세요.');
       engine.current ||= new MeetingEngine();
       const currentEngine = engine.current;
-      const names = await currentEngine.prepare(inputLanguage, { source, portable, speechProfile, translationEnabled:!LOCAL_QWEN || !displayOptions.current.transcribeOnly || displayOptions.current.guidesEnabled, ...callbacks });
+      const names = await currentEngine.prepare(inputLanguage, { speechProvider, source, portable, speechProfile, translationEnabled:!LOCAL_QWEN || !displayOptions.current.transcribeOnly || displayOptions.current.guidesEnabled, ...callbacks });
       if (!alive.current || session !== epoch.current || engine.current !== currentEngine) return;
       if(warm){await warmLive.current?.live.stop({flush:false});warmLive.current=null;const controller=new AbortController();warming.current=controller;const live=await createLiveSession(currentEngine,session,inputLanguage,controller.signal);warming.current=null;if(!alive.current||session!==epoch.current){await live.stop({flush:false});return;}warmLive.current={live,session};}
       setModelNames(names); setReady(true); setProgress(100);
@@ -295,7 +318,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   function queueTranslation(record, currentEngine = engine.current, session = epoch.current) {
     if (record.sourcePending) { updateRecord(record.id, { status: 'error', error: record.incomplete?'미완성 발화예요. 원문을 수정해 문장을 완성한 뒤 다시 번역할 수 있어요.':'인식 중 연결이 끝났어요. 이 원문은 확정되지 않았습니다.' }); return translationQueue.current; }
     if(displayOptions.current.transcribeOnly){updateRecord(record.id,{translation:'',status:'complete',error:'',transcriptOnly:true});if(record.language==='en-US')scheduleReplies(record.original);return translationQueue.current;}
-    if (record.language === 'ko-KR') { updateRecord(record.id, { translation: '', status: 'complete', error: '' }); return translationQueue.current; }
+    const english=englishForTranslation(record.original,record.language);
+    if (!english) { updateRecord(record.id, { translation: '', status: 'complete', error: '' }); return translationQueue.current; }
     const job = record.id;
     if (translationJobs.current.has(job)) return translationQueue.current;
     translationJobs.current.add(job); syncPending();
@@ -311,7 +335,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
         if(!valid()||requestSignal.aborted)return;
         const previous=historyRef.current.records.find(r=>r.id===record.id)?.translation;
         let recovering=Boolean(previous);
-        const result = await currentEngine.translate(record.original, record.language, { ...callbacks, retries:Math.max(0,2-(record.autoAttempts||0)), signal:requestSignal, context:stableContext(record), glossary: glossaryRef.current,
+        const result = await currentEngine.translate(english, 'en-US', { ...callbacks, retries:Math.max(0,2-(record.autoAttempts||0)), signal:requestSignal, context:stableContext(record), glossary: glossaryRef.current,
           onRetry:({attempt})=>{recovering=true;if(valid())updateRecord(record.id,{status:'recovering',retryAttempt:attempt,autoAttempts:(record.autoAttempts||0)+attempt});},
           onText: text => { if (!recovering && valid() && typeof text === 'string') {const row=historyRef.current.records.find(row=>row.id===record.id);updateRecord(record.id, { translation: text,...(row?.captureStartedAt?{firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(performance.now()-row.captureStartedAt)}:{}) });} },
         });
@@ -319,7 +343,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
         if (!result.text?.trim()) throw new Error('번역 결과가 비어 있어요. 이 문장을 다시 번역해 주세요.');
         const milliseconds = Math.round(performance.now() - (record.startedAt || started));
         updateRecord(record.id, { translation: result.text, status: 'complete', error: '', milliseconds,
-          translationMilliseconds: Math.round(performance.now() - started), waitMilliseconds: Math.round(started - queuedAt) });
+          segmentReadyAt:queuedAt,translationRequestAt:started,translationCompletedAt:performance.now(),translationMilliseconds: Math.round(performance.now() - started), waitMilliseconds: Math.round(started - queuedAt) });
         setPhase(`최근 문장 처리 ${(milliseconds / 1000).toFixed(1)}초 · ${record.sample ? '예제 음성' : 'Gemini 통역'}`);
         const lastEnglish = record.language === 'en-US' ? record.original : historyRef.current.records.filter(row => row.language === 'en-US').at(-1)?.original;
         if (lastEnglish) scheduleReplies(lastEnglish);
@@ -461,20 +485,20 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       if (token !== startToken.current) return;
       active.current = false; setListening(false);
       if(audioContext?.state!=='closed')await audioContext?.close();
-      setError(failure.name === 'NotAllowedError' ? '마이크 또는 탭 오디오 권한을 허용한 뒤 다시 눌러주세요.' : failure.message);
+      setError(failure.name === 'NotAllowedError' ? '마이크 또는 탭 오디오 권한을 허용한 뒤 다시 눌러주세요.' : failure.name==='NotFoundError'?'오디오 입력 장치를 찾지 못했습니다. 마이크를 연결하거나 회의 탭 오디오를 선택해 주세요.':failure.message);
     } finally { if (token === startToken.current) setStarting(false); }
   }
 
   function previewLive(record, currentEngine, session) {
     if(displayOptions.current.transcribeOnly)return;
-    if(record.language!=='en-US'||!record.sourcePending||!canStartPreview(record.original))return;
+    if(record.language!=='en-US'||!record.sourcePending||/[가-힣]/u.test(record.original)||!canStartPreview(record.original))return;
     livePreviewRunner.current ||= createLatestTaskRunner({delay:0,canRun:()=>translationJobs.current.size<2,
       run:async(task,emit)=>{
         if(task.session!==epoch.current)return;
         const row=historyRef.current.records.find(r=>r.id===task.id);
         if(!row?.sourcePending)return;
         const previous=previewTasks.current.get(task.id);
-        if(previous?.glossary===task.glossary&&!needsPreview(previous.text,task.text))return;
+        if(previous?.glossary===task.glossary && (canPublishPreview(task.text,previous.text)||!needsPreview(previous.text,task.text)))return;
         const controller=new AbortController();livePreviewAbort.current=controller;
         const promise=task.engine.translateDraft(task.text,'en-US',{signal:controller.signal,onText:emit,context:task.context,glossary:task.glossary});
         previewTasks.current.set(task.id,{text:task.text,glossary:task.glossary,promise});
@@ -488,7 +512,14 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     livePreviewRunner.current.submit({id:record.id,text:record.original,context:stableContext(record),glossary:glossaryRef.current,engine:currentEngine,session});
   }
   async function createLiveSession(currentEngine,session,inputLanguage=language,signal=currentEngine.controller.signal){
-    return (LOCAL_QWEN?createQwenLive:createGoogleLive)({onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
+    const used=new Set(historyRef.current.records.map(row=>row.speakerId).filter(Boolean));
+    let next=0;
+    function allocateSpeaker(){
+      let label;
+      do {label=next<26?String.fromCharCode(65+next):String(next+1);next++;} while(used.has(label));
+      used.add(label);return label;
+    }
+    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
         onUpdate: record => {
           if (session !== epoch.current || !alive.current) return;
           record={...record,sample:samplePreviewToken.current!==null};
@@ -526,7 +557,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     pendingCapture.current = pending;
     let live, recorder;const buffered=[];captureClock.current=performance.now();let bufferedSamples=0;
     try {
-      recorder=await createAudioCapture(stream,{audioBuffer,audioContext,onPCM:samples=>{if(live)live.push(samples);else{bufferedSamples+=samples.length;if(bufferedSamples>400000){controller.abort();throw new Error('음성 연결이 늦어져 시작을 중단했어요. 다시 시작해 주세요.');}buffered.push(samples.slice());}},onLevel:setLevel,onError:failure=>{setError(failure.message);controller.abort();void stopRef.current?.();},onEnded:()=>void stopRef.current?.()});
+      recorder=await createAudioCapture(stream,{audioBuffer,audioContext,onInputStatus:setError,onPCM:samples=>{if(live)live.push(samples);else{bufferedSamples+=samples.length;if(bufferedSamples>400000){controller.abort();throw new Error('음성 연결이 늦어져 시작을 중단했어요. 다시 시작해 주세요.');}buffered.push(samples.slice());}},onLevel:setLevel,onError:failure=>{setError(failure.message);controller.abort();void stopRef.current?.();},onEnded:()=>{if(!audioBuffer)setError('오디오 입력이 종료되었습니다. 장치를 확인하고 다시 연결해 주세요.');void stopRef.current?.();}});
       if(warmLive.current?.session===session){live=warmLive.current.live;warmLive.current=null;}else live=await createLiveSession(currentEngine,session,language,controller.signal);
       if (controller.signal.aborted) throw new Error('음성 연결이 취소됐어요.');
       for(const pcm of buffered)live.push(pcm);buffered.length=0;
@@ -547,7 +578,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       const responses = await Promise.all(files.map(file => fetch(`/samples/${file}.wav`, { credentials: 'omit' })));
       if (responses.some(response => !response.ok)) throw new Error('예제 음성을 불러오지 못했어요.');
       context = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-      const audios = await Promise.all(responses.map(async response => context.decodeAudioData(await response.arrayBuffer())));
+      const audios = await withDeadline(()=>Promise.all(responses.map(async response => context.decodeAudioData(await response.arrayBuffer()))),10000,'브라우저에서 예제 음성을 읽지 못했습니다. 오디오 출력을 확인해 주세요.');
       if (session !== epoch.current || token !== startToken.current) return;
       const fixture = context.createBuffer(1, audios.reduce((sum, audio) => sum + audio.length, 0) + 24000 + (audios.length - 1) * 32000, 16000);
       let offset = 8000;
@@ -709,7 +740,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     try{const sampleBuffer=await context.decodeAudioData(await response.arrayBuffer());await startOwnVoice({sampleBuffer});const current=ownVoice.current;if(current){await current.ended;await stopOwnVoice(false,{flush:true});await ownQueue.current;}}
     finally{await context.close();}
   }
-  async function suggestReplies(mode, {count=1,automatic=false,alternatives=false}={}) {
+  async function suggestReplies(mode, {count=3,automatic=false,alternatives=false}={}) {
     if(!readyRef.current||replyController.current)return;
     const sourceRow=historyRef.current.records.filter(r=>r.language==='en-US'&&!r.sourcePending).at(-1);
     const english=sourceRow?.original;
@@ -725,7 +756,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   }
   function scheduleReplies(english) {
     if(!displayOptions.current.guidesEnabled)return;
-    if(!isGuideMoment(english)||english.trim().toLowerCase()===lastGuideText.current||Date.now()-lastGuideAt.current<(/[?？]/.test(english)?12000:30000))return;
+    if(translationJobs.current.size>2||!isGuideMoment(english)||english.trim().toLowerCase()===lastGuideText.current||Date.now()-lastGuideAt.current<(/[?？]/.test(english)?12000:30000))return;
     if(!replyRunner.current)replyRunner.current=createLatestTaskRunner({delay:900,canRun:()=>translationJobs.current.size===0&&!composer.current&&!replyController.current,
       run:()=>displayOptions.current.guidesEnabled&&Date.now()-lastGuideAt.current>=12000?suggestReplies('비즈니스',{automatic:true}):undefined,publish:()=>{}});
     replyRunner.current.submit({english});
@@ -762,7 +793,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     try {
       await stopOwnVoice(false,{flush:true}); await ownQueue.current; await stop(); await speechQueue.current; await translationQueue.current;
       if (await persistCurrent() === false) return false;
-      await clear();
+      await clear(); selectSpeaker('');
       sessionMeta.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
       return true;
     } finally { setSessionBusy(false); }
@@ -771,7 +802,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     if (archiveLoading || composeBusy || active.current || starting || preparing || sessionBusy || isBusy()) return;
     const selected = archiveRef.current.find(item => item.id === id); if (!selected) return;
     if (await persistCurrent() === false) return;
-    await clear(); sessionMeta.current = { id: selected.id, createdAt: selected.createdAt };
+    await clear(); selectSpeaker(''); sessionMeta.current = { id: selected.id, createdAt: selected.createdAt };
     setGlossary(selected.glossary||'');setMeetingPurpose(selected.purpose||'');mutateHistory(() => selected.records); setReplies(selected.replies || []); changeSpeeches(() => selected.speeches || []); setElapsed(0);
   }
   async function deleteMeeting(id) {
@@ -781,7 +812,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       await storeReady.current; await store.current.remove(id);
       const next = archiveRef.current.filter(item => item.id !== id);
       archiveRef.current = next; setSessions(next);
-      if (id === sessionMeta.current.id) { await clear(); sessionMeta.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() }; }
+      if (id === sessionMeta.current.id) { await clear(); selectSpeaker(''); sessionMeta.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() }; }
     } catch { setStorageError('기록을 삭제하지 못했어요.'); }
     finally { deletingSession.current = null; setSessionBusy(false); }
   }
@@ -791,5 +822,5 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
     prepare, start, stop, testSample, changeLanguage, changeSource, changePortable, changeSpeechProfile, clear,
-    composeReply, suggestReplies, submitText, retryRecord, editRecord };
+    speechProvider, currentSpeaker, selectSpeaker, assignSpeaker, composeReply, suggestReplies, submitText, retryRecord, editRecord };
 }

@@ -9,7 +9,7 @@ export function meetingContext(records, { before = Infinity, text = '', guide = 
   // Keep recent full rows first; never sever a qualifier by slicing a row.
   let total = 0; const selected = [];
   for (const row of [...recent].reverse().concat([...chosen].filter(r=>!recent.includes(r)).reverse())) {
-    const value = `[${rows.indexOf(row)+1}] ${row.original}`;
+    const value = `[${rows.indexOf(row)+1}] ${row.speakerId?'화자 '+row.speakerId+' · ':''}${row.original}`;
     if (value.length + total > budget) continue;
     total += value.length + 1; selected.push({row,value});
   }

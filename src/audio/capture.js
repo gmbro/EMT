@@ -1,3 +1,4 @@
+import {withDeadline} from '../deadline.mjs';
 import { StreamingResampler } from './pcm.mjs';
 import { SpeechSegmenter } from './segmenter.mjs';
 import captureWorkletUrl from './capture.worklet.js?worker&url';
@@ -5,7 +6,7 @@ import captureWorkletUrl from './capture.worklet.js?worker&url';
 /** Starts local PCM capture from an already-authorized MediaStream.
  * Caller supplies getUserMedia/getDisplayMedia; no browser recognition service
  * or network endpoint is used. stop() owns stream tracks by default. */
-export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, onLevel, onError = () => {}, onEnded, audioBuffer, audioContext, ...segmentOptions } = {}) {
+export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, onLevel, onError = () => {}, onInputStatus = () => {}, onEnded, audioBuffer, audioContext, ...segmentOptions } = {}) {
   const Context = window.AudioContext || window.webkitAudioContext;
   if (!Context || !window.AudioWorkletNode) {
     for (const track of stream?.getTracks() || []) track.stop();
@@ -31,6 +32,8 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
   const audioTracks = stream?.getAudioTracks() || [];
   let finishPlayback;
   const ended = audioBuffer ? new Promise(resolve => { finishPlayback = resolve; }) : null;
+  const muteHandler = () => onInputStatus('오디오 입력이 음소거되었습니다. 마이크 또는 공유 탭의 소리를 확인해 주세요.');
+  const unmuteHandler = () => onInputStatus('');
   const endHandler = () => {
     if (stopPromise) return;
     stop().then(() => onEnded?.()).catch(onError);
@@ -39,7 +42,11 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
   async function stop({ flush = true, stopTracks = true } = {}) {
     if (stopPromise) return stopPromise;
     stopPromise = (async () => {
-      for (const track of audioTracks) track.removeEventListener('ended', endHandler);
+      for (const track of audioTracks) {
+        track.removeEventListener('ended', endHandler);
+        track.removeEventListener('mute', muteHandler);
+        track.removeEventListener('unmute', unmuteHandler);
+      }
       source?.disconnect();
       if (audioBuffer) { try { source?.stop(); } catch {} finishPlayback?.(); }
       if (flush && worklet && context.state !== 'closed') {
@@ -71,7 +78,7 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
     if (!audioBuffer && !audioTracks.some(track => track.readyState === 'live')) throw new Error('사용할 오디오 트랙이 없어요. 마이크 또는 탭 오디오를 확인해 주세요.');
     // Force a separate same-origin asset; small `new URL` assets can otherwise
     // become data: URLs in production and be refused by the site's CSP.
-    await context.audioWorklet.addModule(captureWorkletUrl);
+    await withDeadline(()=>context.audioWorklet.addModule(captureWorkletUrl),10000,'브라우저 음성 처리를 시작하지 못했습니다. 다시 연결해 주세요.');
     worklet = new AudioWorkletNode(context, 'habi-audio-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
     worklet.port.onmessage = ({ data }) => {
       if (data?.type === 'flushed') { flushResolve?.(); return; }
@@ -89,8 +96,13 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
     source.connect(worklet);
     worklet.connect(silentGain);
     silentGain.connect(context.destination);
-    for (const track of audioTracks) track.addEventListener('ended', endHandler);
-    await context.resume();
+    for (const track of audioTracks) {
+      track.addEventListener('ended', endHandler);
+      track.addEventListener('mute', muteHandler);
+      track.addEventListener('unmute', unmuteHandler);
+      if (track.muted) muteHandler();
+    }
+    await withDeadline(()=>context.resume(),8000,'오디오 입력이 시작되지 않았습니다. 장치와 브라우저 권한을 확인해 주세요.');
     if (context.state !== 'running') throw new Error('오디오 시작 권한을 확인한 뒤 시작 버튼을 다시 눌러주세요.');
     context.onstatechange=()=>{if(!finished&&!stopPromise&&context.state!=='running')onError(new Error('기기가 음성 입력을 일시 중단했어요. 화면을 켠 상태에서 시작을 다시 눌러주세요.'));};
     if (audioBuffer) source.start();

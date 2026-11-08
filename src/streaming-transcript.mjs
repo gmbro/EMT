@@ -11,12 +11,33 @@ export function sentenceBoundary(text){
  }
  return boundary;
 }
+// Only split authoritative input. A following subject helps distinguish a
+// new clause from a list, a decimal or an unfinished condition.
+function meaningBoundary(text,language) {
+ let sentence=sentenceBoundary(text);
+ if(language==='auto'){
+   // A standalone English phrase followed by Korean can finish without punctuation.
+   const transition=/\s+(?=[가-힣])/u.exec(text);
+   if(transition && /^[^가-힣]*[a-z](?:[^가-힣]*)$/i.test(text.slice(0,transition.index)) &&
+      (text.slice(0,transition.index).match(/[a-z]+/gi)||[]).length>=2){
+     sentence=sentence?Math.min(sentence,transition.index):transition.index;
+   }
+ }
+ const clause=/[;,]\s+(?=(?:(?:but|and|so|however)\s+)?(?:we|they|you|I|it|our team)\s+\w+)/ig;
+ for(const match of text.matchAll(clause)){
+   const prefix=text.slice(0,match.index);
+   if(prefix.trim().split(/\s+/).length<4 || /^(?:if|unless|although|when|provided|because)\b/i.test(prefix.trim()))continue;
+   return sentence ? Math.min(sentence,match.index+1) : match.index+1;
+ }
+ return sentence;
+}
 export function createStreamingTranscript({onUpdate,onFinal,sample=false,id=()=>crypto.randomUUID(),now=Date.now,clock=()=>performance.now(),language='auto'}) {
- let record=null,tail='',hypothesis='',disposed=false;
+ let turnId=null,record=null,tail='',hypothesis='',disposed=false;
  const emit=(text,pending)=>{
    if(!text?.trim()||disposed)return;
    record ||= {id:id(),createdAt:now(),startedAt:clock(),translation:'',input:'voice',sample,live:true,speechModel:'transcribe'};
-   record={...record,original:text,language:language==='auto'?detectCaptionLanguage(text):language,sourcePending:pending, stableOriginal:tail};onUpdate({...record});
+   turnId ||= record.id;
+   record={...record,turnId,original:text,language:language==='auto'?detectCaptionLanguage(text):language,sourcePending:pending, stableOriginal:tail};onUpdate({...record});
  };
  return {
    get idle(){return !record;},
@@ -25,17 +46,24 @@ export function createStreamingTranscript({onUpdate,onFinal,sample=false,id=()=>
      if(content.interimInputTranscription?.text){hypothesis=content.interimInputTranscription.text;emit(join(tail,hypothesis),true);}
      if(content.inputTranscription?.text){
        tail=join(tail,content.inputTranscription.text);hypothesis='';
-       let boundary=sentenceBoundary(tail);
-       if(!boundary && tail.length>360){const clause=tail.slice(0,360).match(/^([\s\S]{120,}[,;，；])\s/u);if(clause)boundary=clause[1].length;}
-       while(boundary){const completed=tail.slice(0,boundary).trim(),remaining=tail.slice(boundary).trimStart();emit(completed,false);const final={...record};record=null;tail=remaining;onFinal(final);boundary=sentenceBoundary(tail);}
+       let boundary=meaningBoundary(tail,language);
+       while(boundary){const completed=tail.slice(0,boundary).trim(),remaining=tail.slice(boundary).trimStart();emit(completed,false);const final={...record};record=null;tail=remaining;onFinal(final);boundary=meaningBoundary(tail,language);}
        if(tail)emit(tail,true);
      }
    },
    flush(){
      if(tail){emit(tail,false);onFinal({...record});record=null;tail='';}
      if(hypothesis){emit(hypothesis,true);onFinal({...record,sourcePending:true,incomplete:true});record=null;}
-     tail='';hypothesis='';
+     turnId=null;tail='';hypothesis='';
    },
    dispose(){disposed=true;record=null;tail='';hypothesis='';},
  };
+}
+
+// Keep the original bilingual record intact. Embedded English product names
+// alone do not warrant a separate translation under Korean speech.
+export function englishForTranslation(original, language) {
+ if(!/[가-힣]/u.test(original))return language==='ko-KR'?'':original;
+ const passages=original.match(/[A-Za-z0-9][^가-힣ㄱ-ㅎㅏ-ㅣ\n]*/gu)||[];
+ return passages.map(part=>part.trim()).filter(part=>language!=='ko-KR'||/\b[A-Za-z]+(?:['’-][a-z]+)?\s+[a-z]+\b/.test(part)).join(' ');
 }
