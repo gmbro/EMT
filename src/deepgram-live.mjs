@@ -4,10 +4,15 @@ import {createSpeechHealth} from './speech-health.mjs';
 
 export function speakerSegments(alternative,language) {
   const groups=[];
-  for(const word of alternative.words||[]) {
+  const words = alternative.words?.length ? alternative.words : (alternative.transcript || '').trim().split(/\s+/).map(word => ({word}));
+  const utteranceLanguage = alternative.languages?.length === 1 ? alternative.languages[0] : '';
+  for(const word of words) {
     const text=(word.punctuated_word||word.word||'').trim();
     if(!text)continue;
-    const code=(word.language||'').split('-')[0];
+    const code=(word.language || utteranceLanguage).toLowerCase().split('-')[0];
+    if (code && code !== 'ko' && code !== 'en') continue;
+    // Streaming hypotheses can omit language tags or temporarily mislabel a word.
+    if (/[^\p{Script=Latin}\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}]/u.test(text)) continue;
     const lang=code==='ko'?'ko-KR':code==='en'?'en-US':detectCaptionLanguage(text,language);
     const speaker=Number.isInteger(word.speaker)?word.speaker:null;
     let group=groups.at(-1);
@@ -17,11 +22,10 @@ export function speakerSegments(alternative,language) {
     }
     group.original+=(group.original?' ':'')+text;
   }
-  if(!groups.length&&alternative.transcript?.trim())groups.push({speaker:null,language:detectCaptionLanguage(alternative.transcript,language),original:alternative.transcript.trim()});
   return groups;
 }
 
-export async function createDeepgramLive({onUpdate,onFinal,onError,onStatus,signal,language='auto',allocateSpeaker,Socket=WebSocket}) {
+export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onStatus,signal,language='auto',allocateSpeaker,Socket=WebSocket}) {
   const health=createSpeechHealth();
   let socket,provisional,closed=false,stopping=false,ready=false,retries=[],labels=new Map();
   let backlog=[],seen=new Set(),finish,watchdog,recovery,timedOut=false;
@@ -45,17 +49,26 @@ export async function createDeepgramLive({onUpdate,onFinal,onError,onStatus,sign
     try {result=JSON.parse(event.data);}catch{return;}
     if(result.type!=='Results')return;
     const alt=result.channel?.alternatives?.[0];
-    if(!alt?.transcript?.trim())return;
-    health.response();
-    if(timedOut){timedOut=false;onStatus('');}
+    if(!alt)return;
+    if (alt.transcript?.trim()) {
+      health.response();
+      if(timedOut){timedOut=false;onStatus('');}
+    }
     const groups=speakerSegments(alt,language);
     if(result.is_final){
       const key=result.start+':'+result.duration;
       if(seen.has(key))return;
       seen.add(key);
+    }
+    if (!groups.length) {
+      if (provisional) onDiscard?.(provisional.id);
+      provisional=null;
+      return;
+    }
+    if (result.is_final) {
       for(const group of groups)publish(group,false);
-    }else if(groups.length){
-      publish({...groups[0],original:alt.transcript,speaker:groups.length===1?groups[0].speaker:null},true);
+    }else{
+      publish(groups[0],true);
     }
   }
   function dispose(){
@@ -79,6 +92,10 @@ export async function createDeepgramLive({onUpdate,onFinal,onError,onStatus,sign
     if(!response.ok||!data.token)throw new Error(data.error||'Deepgram 음성 인증에 실패했습니다.');
     if(closed||stopping)throw new Error('음성 연결이 취소되었습니다.');
     const params=new URLSearchParams({model:'nova-3',language:language==='auto'?'multi':language.split('-')[0],diarize_model:'latest',interim_results:'true',punctuate:'true',encoding:'linear16',sample_rate:'16000',channels:'1'});
+    if (language === 'auto') {
+      params.append('language_hint','en');
+      params.append('language_hint','ko');
+    }
     const ws=new Socket('wss://api.deepgram.com/v1/listen?'+params,['bearer',data.token]);
     socket=ws;
     await new Promise((resolve,reject)=>{

@@ -20,13 +20,21 @@ import { usageSummary, subscribeUsage } from './request-metrics.mjs';
 import { createGoogleLive } from './google-live.js';
 
 export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
-  const [speechProvider,setSpeechProvider]=useState(LOCAL_QWEN?'qwen':'pending');
+  const [availableProvider,setAvailableProvider]=useState(LOCAL_QWEN?'qwen':'pending');
+  const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')==='google';}catch{return false;}});
+  const speechProvider=availableProvider==='deepgram' && preferGoogle ? 'google' : availableProvider;
+  function chooseSpeechProvider(value){
+    if(availableProvider!=='deepgram' || active.current || preparingRef.current || starting || stopping)return;
+    setPreferGoogle(value==='google');
+    setReady(false);
+    try{localStorage.setItem('emt-speech-provider',value);}catch{}
+  }
   useEffect(()=>{
     if(LOCAL_QWEN)return;
     const controller=new AbortController();
     fetch('/api/live-token?provider',{signal:controller.signal}).then(r=>r.json())
-      .then(data=>setSpeechProvider(data.provider==='deepgram'?'deepgram':'google'))
-      .catch(()=>{if(!controller.signal.aborted)setSpeechProvider('google');});
+      .then(data=>setAvailableProvider(data.provider==='deepgram'?'deepgram':'google'))
+      .catch(()=>{if(!controller.signal.aborted)setAvailableProvider('google');});
     return ()=>controller.abort();
   },[]);
   const displayOptions=useRef({transcribeOnly,guidesEnabled});displayOptions.current={transcribeOnly,guidesEnabled};
@@ -520,6 +528,14 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       used.add(label);return label;
     }
     return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
+        onDiscard: id => {
+          if (session !== epoch.current || !alive.current) return;
+          livePreviewRunner.current?.invalidate();
+          livePreviewAbort.current?.abort();
+          previewTasks.current.delete(id);
+          previewContexts.current.delete(id);
+          mutateHistory(rows => rows.filter(row => row.id !== id));
+        },
         onUpdate: record => {
           if (session !== epoch.current || !alive.current) return;
           record={...record,sample:samplePreviewToken.current!==null};
@@ -822,5 +838,5 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
     prepare, start, stop, testSample, changeLanguage, changeSource, changePortable, changeSpeechProfile, clear,
-    speechProvider, currentSpeaker, selectSpeaker, assignSpeaker, composeReply, suggestReplies, submitText, retryRecord, editRecord };
+    availableProvider, chooseSpeechProvider, speechProvider, currentSpeaker, selectSpeaker, assignSpeaker, composeReply, suggestReplies, submitText, retryRecord, editRecord };
 }

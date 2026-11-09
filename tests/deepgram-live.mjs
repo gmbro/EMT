@@ -11,17 +11,30 @@ test('language switch keeps the voice; same-language speaker switch starts anoth
 test('interim becomes the first final row, repeated finals do not duplicate speaker turns',async t=>{
   let ws;
   class Socket {
-    constructor(){ws=this;this.readyState=0;queueMicrotask(()=>{this.readyState=1;this.onopen();});}
+    constructor(url){assert.deepEqual(new URL(url).searchParams.getAll('language_hint'),['en','ko']);ws=this;this.readyState=0;queueMicrotask(()=>{this.readyState=1;this.onopen();});}
     close(){this.readyState=3;this.onclose?.();}
     send(){}
   }
   t.mock.method(globalThis,'fetch',async()=>Response.json({token:'temporary'}));
   const rows=new Map(),finals=[];
   let speaker=0;
-  const live=await createDeepgramLive({Socket,onUpdate:r=>rows.set(r.id,r),onFinal:r=>finals.push(r),onStatus:()=>{},onError:assert.fail,allocateSpeaker:()=>String.fromCharCode(65+speaker++)});
+  const live=await createDeepgramLive({Socket,onDiscard:id=>rows.delete(id),onUpdate:r=>rows.set(r.id,r),onFinal:r=>finals.push(r),onStatus:()=>{},onError:assert.fail,allocateSpeaker:()=>String.fromCharCode(65+speaker++)});
   try{
     const emit=final=>ws.onmessage({data:JSON.stringify({type:'Results',is_final:final,start:0,duration:1,channel:{alternatives:[{transcript:'Yes 네',words:[{word:'Yes',speaker:0},{word:'네',speaker:1}]}]}})});
     emit(false);emit(true);emit(true);
     assert.equal(rows.size,2);assert.deepEqual(finals.map(r=>[r.original,r.speakerId]),[['Yes','A'],['네','B']]);
+    const publish=(transcript,is_final)=>ws.onmessage({data:JSON.stringify({type:'Results',start:2,duration:1,is_final,channel:{alternatives:[{transcript}]}})});
+    publish('Maybe',false);
+    assert.equal(rows.size,3);
+    publish('مرحبا',true);
+    assert.equal(rows.size,2);
+    assert.equal(finals.length,2);
   }finally{await live.stop({flush:false});}
+});
+
+test('bilingual captions exclude unsupported tags and scripts, including untagged fallback text',()=>{
+  const words=[{word:'Hello',language:'en'},{word:'مرحبا',language:'en'},{word:'bonjour',language:'fr'},{word:'네',language:'ko'}];
+  assert.deepEqual(speakerSegments({words},'auto').map(g=>g.original), ['Hello','네']);
+  assert.deepEqual(speakerSegments({transcript:'مرحبا'},'auto'),[]);
+  assert.deepEqual(speakerSegments({transcript:'hola',languages:['es']},'auto'),[]);
 });
