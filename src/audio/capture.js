@@ -23,6 +23,7 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
   }
   let source;
   let worklet;
+  let processor;
   let silentGain;
   let stopPromise;
   let finished = false;
@@ -66,6 +67,7 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
         worklet.disconnect();
         worklet.port.close();
       }
+      if (processor) { processor.onaudioprocess = null; processor.disconnect(); }
       silentGain?.disconnect();
       if (stopTracks) for (const track of stream?.getTracks() || []) track.stop();
       if (context.state !== 'closed') await context.close();
@@ -78,23 +80,37 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
     if (!audioBuffer && !audioTracks.some(track => track.readyState === 'live')) throw new Error('사용할 오디오 트랙이 없어요. 마이크 또는 탭 오디오를 확인해 주세요.');
     // Force a separate same-origin asset; small `new URL` assets can otherwise
     // become data: URLs in production and be refused by the site's CSP.
-    await withDeadline(()=>context.audioWorklet.addModule(captureWorkletUrl),10000,'브라우저 음성 처리를 시작하지 못했습니다. 다시 연결해 주세요.');
-    worklet = new AudioWorkletNode(context, 'habi-audio-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
-    worklet.port.onmessage = ({ data }) => {
-      if (data?.type === 'flushed') { flushResolve?.(); return; }
-      if (!finished && data?.type === 'samples') {
-        try { const pcm = resampler.push(data.samples); onPCM?.(pcm); segmenter.push(pcm); }
-        catch (error) { onError(error); }
-      }
+    const receiveSamples = samples => {
+      if (finished) return;
+      try {
+        const pcm = resampler.push(samples);
+        onPCM?.(pcm);
+        segmenter.push(pcm);
+      } catch (error) { onError(error); }
     };
-    worklet.onprocessorerror = () => onError(new Error('기기 내 오디오 처리 중 오류가 발생했어요. 듣기를 다시 시작해 주세요.'));
+    try {
+      await withDeadline(()=>context.audioWorklet.addModule(captureWorkletUrl),3000,'오디오 모듈 연결 시간 초과');
+      worklet = new AudioWorkletNode(context, 'habi-audio-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    } catch (error) {
+      if (!context.createScriptProcessor) throw error;
+      processor = context.createScriptProcessor(2048, 1, 1);
+      processor.onaudioprocess = event => receiveSamples(event.inputBuffer.getChannelData(0));
+    }
+    if (worklet) {
+      worklet.port.onmessage = ({ data }) => {
+        if (data?.type === 'flushed') { flushResolve?.(); return; }
+        if (data?.type === 'samples') receiveSamples(data.samples);
+      };
+      worklet.onprocessorerror = () => onError(new Error('기기 내 오디오 처리 중 오류가 발생했어요. 듣기를 다시 시작해 주세요.'));
+    }
     if (audioBuffer) {
       source = context.createBufferSource(); source.buffer = audioBuffer; source.onended = () => finishPlayback?.();
     } else source = context.createMediaStreamSource(stream);
     silentGain = context.createGain();
     silentGain.gain.value = 0;
-    source.connect(worklet);
-    worklet.connect(silentGain);
+    const captureNode = worklet || processor;
+    source.connect(captureNode);
+    captureNode.connect(silentGain);
     silentGain.connect(context.destination);
     for (const track of audioTracks) {
       track.addEventListener('ended', endHandler);
