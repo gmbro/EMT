@@ -47,3 +47,7 @@
 .turn .pending-text{color:#61738a;font-style:italic}.turn .turn-translation:has(.pending-text)::before{content:"번역 중 ";font-size:.8em}.turn{content-visibility:auto;contain-intrinsic-size:auto 92px}
 .setup-box .workspace-preview{display:block;margin:8px auto;padding:7px 12px;border-bottom:1px solid #c5d3e2;color:#34577a}
 .turn-heading{flex-wrap:wrap;gap:6px}.turn-heading label{display:flex;align-items:center;gap:5px}.turn-heading select,.turn .speaker-edit{border:1px solid #c9d5e3;border-radius:5px;padding:3px 6px;font-size:12px}.turn .speaker-edit{margin-left:5px}.turn-sheet .export-form select{max-width:100%}
+
+.home-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}
+@media(max-width:1000px){.fixed-controls .footer-left .mini-brand{display:inline-flex;margin:0}.footer-left .mini-brand span{display:none}.fixed-controls .mini-brand svg{display:block}}
+@media(max-width:360px){.fixed-controls .footer-left .mini-brand+button{display:inline-flex}}

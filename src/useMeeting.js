@@ -73,7 +73,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   const [sessionBusy, setSessionBusy] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [archiveLoading, setArchiveLoading] = useState(true), [saving, setSaving] = useState(false);
-  const store = useRef(null), storeReady = useRef(null), revision = useRef(0), queuedRevision = useRef(-1), saveCount = useRef(0), saveTask = useRef(null);
+  const store = useRef(null), storeReady = useRef(null), revision = useRef(0), queuedRevision = useRef(-1), savedRevision = useRef(-1), saveCount = useRef(0), saveTask = useRef(null);
   const [speeches, setSpeeches] = useState([]), [composeBusy, setComposeBusy] = useState(false);
   const speechesRef = useRef(speeches), composer = useRef(null); speechesRef.current = speeches;
   function changeSpeeches(update) { const next = update(speechesRef.current); speechesRef.current = next; setSpeeches(next); revision.current++; }
@@ -792,6 +792,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     const task = (async () => {
       try {
         await storeReady.current; await store.current.put(snapshot);
+        savedRevision.current = checkpoint;
         if (notify && alive.current) setStorageError('');
         return true;
       } catch {
@@ -803,11 +804,19 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     saveTask.current = task;
     return task;
   }
-  async function newMeeting() {
+  async function newMeeting(draft) {
     if (archiveLoading || sessionBusy || preparingRef.current || starting) return false;
     setSessionBusy(true);
     try {
       await stopOwnVoice(false,{flush:true}); await ownQueue.current; await stop(); await speechQueue.current; await translationQueue.current;
+      if (draft?.ko.trim()) {
+        changeSpeeches(rows => {
+          const old = rows.find(row => row.id === draft.id);
+          if (old?.ko === draft.ko) return rows;
+          const item = {id:draft.id, ko:draft.ko.trim(), en:'', status:'draft', input:'text', createdAt:old?.createdAt || Date.now()};
+          return old ? rows.map(row => row.id === item.id ? item : row) : [...rows,item];
+        });
+      }
       if (await persistCurrent() === false) return false;
       await clear(); selectSpeaker('');
       sessionMeta.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
@@ -833,7 +842,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     finally { deletingSession.current = null; setSessionBusy(false); }
   }
 
-  return { testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
+  return { hasUnsaved: () => Boolean((historyRef.current.records.length || speechesRef.current.length) && savedRevision.current !== revision.current), testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
     listening, starting, stopping, level, elapsed, interim, partial, draftSample, records: history.records, characterCount: history.characterCount,
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
