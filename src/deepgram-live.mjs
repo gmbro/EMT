@@ -23,14 +23,14 @@ export function speakerSegments(alternative,language) {
   return groups;
 }
 
-export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onStatus,signal,language='auto',allocateSpeaker,Socket=WebSocket}) {
+export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onStatus,signal,language='auto',diarize=false,allocateSpeaker,Socket=WebSocket}) {
   const health=createSpeechHealth();
   let socket,provisional,closed=false,stopping=false,ready=false,retries=[],labels=new Map();
   let backlog=[],seen=new Set(),finish,watchdog,recovery,timedOut=false;
   function publish(group,pending) {
     provisional ||= {id:crypto.randomUUID(),createdAt:Date.now(),startedAt:performance.now(),input:'voice',live:true,speechModel:'nova-3'};
     let speakerId='';
-    if(group.speaker!==null){
+    if(diarize && group.speaker!==null){
       if(!labels.has(group.speaker))labels.set(group.speaker,allocateSpeaker());
       speakerId=labels.get(group.speaker);
     }
@@ -89,7 +89,8 @@ export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onS
     const data=await response.json();
     if(!response.ok||!data.token)throw new Error(data.error||'Deepgram 음성 인증에 실패했습니다.');
     if(closed||stopping)throw new Error('음성 연결이 취소되었습니다.');
-    const params=new URLSearchParams({model:'nova-3',language:language==='auto'?'multi':language.split('-')[0],diarize_model:'latest',interim_results:'true',punctuate:'true',encoding:'linear16',sample_rate:'16000',channels:'1'});
+    const params=new URLSearchParams({model:'nova-3',language:language==='auto'?'multi':language.split('-')[0],interim_results:'true',punctuate:'true',encoding:'linear16',sample_rate:'16000',channels:'1'});
+    if (diarize) params.set('diarize_model','latest');
     if (language === 'auto') {
       params.append('language_hint','en');
       params.append('language_hint','ko');

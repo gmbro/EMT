@@ -22,6 +22,7 @@ import { createGoogleLive } from './google-live.js';
 export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   const [availableProvider,setAvailableProvider]=useState(LOCAL_QWEN?'qwen':'pending');
   const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')==='google';}catch{return false;}});
+  const [separateSpeakers,setSeparateSpeakers]=useState(false);
   const speechProvider=availableProvider==='deepgram' && preferGoogle ? 'google' : availableProvider;
   function chooseSpeechProvider(value){
     if(availableProvider!=='deepgram' || active.current || preparingRef.current || starting || stopping)return;
@@ -527,7 +528,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       do {label=next<26?String.fromCharCode(65+next):String(next+1);next++;} while(used.has(label));
       used.add(label);return label;
     }
-    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
+    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,diarize:separateSpeakers,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
         onDiscard: id => {
           if (session !== epoch.current || !alive.current) return;
           livePreviewRunner.current?.invalidate();
@@ -847,5 +848,5 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
     prepare, start, stop, testSample, changeLanguage, changeSource, changePortable, changeSpeechProfile, clear,
-    availableProvider, chooseSpeechProvider, speechProvider, currentSpeaker, selectSpeaker, assignSpeaker, composeReply, suggestReplies, submitText, retryRecord, editRecord };
+    separateSpeakers, setSeparateSpeakers, availableProvider, chooseSpeechProvider, speechProvider, currentSpeaker, selectSpeaker, assignSpeaker, composeReply, suggestReplies, submitText, retryRecord, editRecord };
 }

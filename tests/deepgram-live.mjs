@@ -18,7 +18,7 @@ test('interim becomes the first final row, repeated finals do not duplicate spea
   t.mock.method(globalThis,'fetch',async()=>Response.json({token:'temporary'}));
   const rows=new Map(),finals=[];
   let speaker=0;
-  const live=await createDeepgramLive({Socket,onDiscard:id=>rows.delete(id),onUpdate:r=>rows.set(r.id,r),onFinal:r=>finals.push(r),onStatus:()=>{},onError:assert.fail,allocateSpeaker:()=>String.fromCharCode(65+speaker++)});
+  const live=await createDeepgramLive({Socket,diarize:true,onDiscard:id=>rows.delete(id),onUpdate:r=>rows.set(r.id,r),onFinal:r=>finals.push(r),onStatus:()=>{},onError:assert.fail,allocateSpeaker:()=>String.fromCharCode(65+speaker++)});
   try{
     const emit=final=>ws.onmessage({data:JSON.stringify({type:'Results',is_final:final,start:0,duration:1,channel:{alternatives:[{transcript:'Yes 네',words:[{word:'Yes',speaker:0},{word:'네',speaker:1}]}]}})});
     emit(false);emit(true);emit(true);
