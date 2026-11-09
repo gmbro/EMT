@@ -1,4 +1,4 @@
-import {detectCaptionLanguage} from './meeting-archive.mjs';
+import {detectCaptionLanguage,supportedCaptionWord} from './meeting-archive.mjs';
 import {createPCMFramer} from './live-captions.mjs';
 import {createSpeechHealth} from './speech-health.mjs';
 
@@ -10,9 +10,7 @@ export function speakerSegments(alternative,language) {
     const text=(word.punctuated_word||word.word||'').trim();
     if(!text)continue;
     const code=(word.language || utteranceLanguage).toLowerCase().split('-')[0];
-    if (code && code !== 'ko' && code !== 'en') continue;
-    // Streaming hypotheses can omit language tags or temporarily mislabel a word.
-    if (/[^\p{Script=Latin}\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}]/u.test(text)) continue;
+    if (!supportedCaptionWord(text,code)) continue;
     const lang=code==='ko'?'ko-KR':code==='en'?'en-US':detectCaptionLanguage(text,language);
     const speaker=Number.isInteger(word.speaker)?word.speaker:null;
     let group=groups.at(-1);

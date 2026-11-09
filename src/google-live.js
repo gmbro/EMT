@@ -4,7 +4,7 @@ import { createStreamingTranscript } from './streaming-transcript.mjs';
 import { createPCMFramer, pcm16Base64 } from './live-captions.mjs';
 const WS_ENDPOINT='wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function createGoogleLive({onUpdate,onFinal,onError,sample=false,signal,fetchImpl=fetch,Socket=WebSocket,language='auto',vocabulary=[],rotateAfterMs=480000,onStatus=()=>{},now=()=>performance.now(),scheduleWatch=setInterval,cancelWatch=clearInterval}) {
+export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sample=false,signal,fetchImpl=fetch,Socket=WebSocket,language='auto',vocabulary=[],rotateAfterMs=480000,onStatus=()=>{},now=()=>performance.now(),scheduleWatch=setInterval,cancelWatch=clearInterval}) {
   const channels=[], setupCancels=new Set(),preRoll=[];
   const health=createSpeechHealth({now}), metricId=crypto.randomUUID();
   let capturedSamples=0,sentSamples=0,reconnections=0,usageReports=0;
@@ -61,7 +61,7 @@ export async function createGoogleLive({onUpdate,onFinal,onError,sample=false,si
   try {
     for(const target of ['ko']){
       const channel={target,buffer:[],reconnects:[],reconnecting:false,canResume:false};
-      channel.assembler=createStreamingTranscript({sample,language,onUpdate:r=>onUpdate(timed(r)),onFinal:r=>onFinal(timed(r))});
+      channel.assembler=createStreamingTranscript({sample,language,onDiscard,onUpdate:r=>onUpdate(timed(r)),onFinal:r=>onFinal(timed(r))});
       channels.push(channel);
     }
     await Promise.all(channels.map(connect));

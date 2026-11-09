@@ -25,3 +25,9 @@ export function detectCaptionLanguage(text, fallback = 'en-US') {
   const latin = (text.match(/[a-z]/giu) || []).length;
   return (korean>0 && latin===0) || (korean >= 2 && korean >= latin * .15) ? 'ko-KR' : latin ? 'en-US' : fallback === 'auto' ? 'en-US' : fallback;
 }
+
+export function supportedCaptionWord(text, languageCode='') {
+  const code=languageCode.toLowerCase().split('-')[0];
+  return (!code || code==='en' || code==='ko') &&
+    !/[^\p{Script=Latin}\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}]/u.test(text);
+}

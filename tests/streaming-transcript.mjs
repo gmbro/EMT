@@ -43,3 +43,15 @@ test('Korean acknowledgment after English starts a separate untranslated record 
  assert.equal(rows[0].turnId,rows[1].turnId);
  assert.equal(englishForTranslation(rows[1].original,rows[1].language),'');
 });
+
+test('foreign revisions retract a bilingual preview and never become final captions',()=>{
+ const rows=new Map(),finals=[];
+ const stream=createStreamingTranscript({onUpdate:r=>rows.set(r.id,r),onDiscard:id=>rows.delete(id),onFinal:r=>finals.push(r.original)});
+ stream.receive({interimInputTranscription:{text:'Maybe'}});
+ stream.receive({inputTranscription:{text:'مرحبا',languageCode:'ar'}});
+ stream.flush();
+ assert.equal(rows.size,0);
+ stream.receive({inputTranscription:{text:'Hello مرحبا everyone.'}});
+ stream.flush();
+ assert.deepEqual(finals.map(text=>text.replace(/\s+/g,' ')),['Hello everyone.']);
+});

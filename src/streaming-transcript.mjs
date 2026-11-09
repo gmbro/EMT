@@ -1,4 +1,4 @@
-import { detectCaptionLanguage } from './meeting-archive.mjs';
+import { detectCaptionLanguage, supportedCaptionWord } from './meeting-archive.mjs';
 const join=(a,b)=>!a?a+b:!b?a:b.startsWith(' ')||a.endsWith(' ')||/^[,.;!?。？！]/u.test(b)?a+b:a+' '+b;
 // Provider finalized chunks may end INSIDE a sentence, including just after a
 // negation. Keep that authoritative tail until the sentence is complete.
@@ -31,7 +31,11 @@ function meaningBoundary(text,language) {
  }
  return sentence;
 }
-export function createStreamingTranscript({onUpdate,onFinal,sample=false,id=()=>crypto.randomUUID(),now=Date.now,clock=()=>performance.now(),language='auto'}) {
+function bilingualText(part) {
+ if (!part?.text || supportedCaptionWord(part.text,part.languageCode)) return part?.text || '';
+ return part.text.split(/(\s+)/).filter(word=>supportedCaptionWord(word,part.languageCode)).join('').trim();
+}
+export function createStreamingTranscript({onUpdate,onFinal,onDiscard,sample=false,id=()=>crypto.randomUUID(),now=Date.now,clock=()=>performance.now(),language='auto'}) {
  let turnId=null,record=null,tail='',hypothesis='',disposed=false;
  const emit=(text,pending)=>{
    if(!text?.trim()||disposed)return;
@@ -43,9 +47,13 @@ export function createStreamingTranscript({onUpdate,onFinal,sample=false,id=()=>
    get idle(){return !record;},
    receive(content){
      if(disposed)return;
-     if(content.interimInputTranscription?.text){hypothesis=content.interimInputTranscription.text;emit(join(tail,hypothesis),true);}
+     if(content.interimInputTranscription?.text || content.inputTranscription?.text){
+       hypothesis=bilingualText(content.interimInputTranscription);
+       if(!tail && !hypothesis && !bilingualText(content.inputTranscription) && record){onDiscard?.(record.id);record=null;}
+       if(content.interimInputTranscription?.text)emit(join(tail,hypothesis),true);
+     }
      if(content.inputTranscription?.text){
-       tail=join(tail,content.inputTranscription.text);hypothesis='';
+       tail=join(tail,bilingualText(content.inputTranscription));hypothesis='';
        let boundary=meaningBoundary(tail,language);
        while(boundary){const completed=tail.slice(0,boundary).trim(),remaining=tail.slice(boundary).trimStart();emit(completed,false);const final={...record};record=null;tail=remaining;onFinal(final);boundary=meaningBoundary(tail,language);}
        if(tail)emit(tail,true);
