@@ -3,6 +3,9 @@ from pathlib import Path
 import hashlib
 import json
 import zipfile
+import os
+import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'public/downloads'
@@ -29,6 +32,10 @@ def build():
     checksum = hashlib.sha256(target.read_bytes()).hexdigest()
     (OUT/'emt-qwen-windows.sha256').write_text(checksum+'  emt-qwen-windows.zip\n')
     (OUT/'windows-guide.txt').write_bytes((ROOT/'local/windows/guide.txt').read_bytes())
+    with tempfile.TemporaryDirectory() as temp:
+        stub = Path(temp) / 'launcher.exe'
+        subprocess.run([os.environ.get('GO', 'go'), 'build', '-trimpath', '-ldflags=-s -w', '-o', str(stub), str(ROOT/'local/windows/installer/main.go')], check=True, env={**os.environ, 'CGO_ENABLED':'0', 'GOOS':'windows', 'GOARCH':'amd64'})
+        (OUT/'EMT-Setup.exe').write_bytes(stub.read_bytes() + target.read_bytes())
     print(json.dumps({'files':len(manifest), 'bytes':target.stat().st_size, 'sha256':checksum}))
 
 if __name__ == '__main__':

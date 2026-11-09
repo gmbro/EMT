@@ -41,7 +41,7 @@ def main():
     if choice == 'GPU':
         run([PYTHON, '-c', 'import torch; assert torch.cuda.is_available(), "CUDA unavailable. Update NVIDIA driver or rerun CPU setup."'])
     run([PYTHON, ROOT / 'local/qwen/worker-windows.py', '--check'])
-    print('Setup complete. Run 실행.cmd. Keep its terminal open during the meeting.')
+    print('Setup complete. Keep the terminal open during your meeting.')
     print('Transcription needs no API key. For translation, copy .env.example to .env.local and enter your own Gemini key.')
 
 if __name__ == '__main__':

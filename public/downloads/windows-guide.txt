@@ -6,29 +6,19 @@ Windows ARM은 지원하지 않습니다. CPU로 실행할 수 있지만 실시�
 NVIDIA GPU/최신 드라이버 권장. 메모리 16GB 이상, 디스크 여유 15GB 이상을 준비하세요.
 위 사양은 설치 계획 기준이며 실제 최소 사양/성능을 검증한 수치는 아닙니다.
 
-1. 준비
-- ZIP을 모두 풀어 주세요. ZIP 안에서 직접 실행하지 마세요.
-- https://nodejs.org/en/download 에서 Windows LTS를 설치합니다 (npm 포함).
-- https://www.python.org/downloads/windows/ 에서 Python 설치 관리자를 설치하고,
-  새 터미널에서 py install 3.12 를 실행합니다. 이미 Python 3.12 x64가 있으면 생략합니다.
-- 새 터미널에서 node --version 과 py -3.12 --version 을 확인합니다.
+1. 간편 설치
+- 공개 웹의 Windows 설치 안내에서 EMT-Setup.exe를 내려받아 더블클릭합니다.
+- 설치 프로그램이 사용자 폴더 %LOCALAPPDATA%\EMT\app에 앱을 풀고 Python 3.12 x64와 Node.js 22 이상을 확인합니다.
+- 빠진 프로그램은 Windows 패키지 관리자 winget으로 설치합니다. winget이 없으면 Microsoft 앱 설치 관리자를 업데이트하거나 화면에 표시된 공식 사이트에서 필요한 프로그램을 설치한 뒤 EXE를 다시 엽니다.
 
-2. 설치
-- 설치.cmd를 더블클릭합니다. 관리자 권한/방화벽 해제는 필요하지 않습니다.
-- NVIDIA GPU/최신 드라이버가 있으면 GPU를 입력합니다. 그 외에는 Enter(CPU)를 누릅니다.
-- 이 폴더의 .venv-qwen에 Python 패키지, node_modules에 웹 실행 환경,
-  .qwen-models에 공식 Qwen3-ASR-1.7B-hf 가중치를 받습니다. 수 GB 이상 내려받습니다.
-- 설치는 PyPI, npm registry, download.pytorch.org, Hugging Face 공식 모델 저장소를 사용합니다.
-- 인터넷 명령을 받아 즉시 실행하거나 PowerShell 실행 정책을 변경하지 않습니다.
-- 보안 프로그램이 차단하면 차단을 해제하지 말고 오류 문구와 배포 출처를 확인하세요.
+2. 모델 설치
+- CPU 사용은 Enter, NVIDIA GPU와 최신 드라이버가 있으면 GPU를 입력합니다.
+- 설치 중 창을 열어 두세요. 설치 실패 시 오류 메시지를 확인하고 EXE를 다시 실행하세요.
 
 3. 실행
-- 실행.cmd를 열고 http://127.0.0.1:4174/ 를 Chrome/Edge에서 사용합니다.
-- 모델 로딩 후 새 회의 시작 → 마이크 허용. 처음 준비에는 시간이 걸릴 수 있습니다.
-- 받아쓰기 전용/추천 답변 끔이 기본입니다. 이 상태에서는 Gemini 키가 필요 없습니다.
-- 사용 중 실행 창을 유지합니다. 종료는 창에서 Ctrl+C를 누릅니다.
-- 다음 사용에는 설치를 반복하지 않고 실행.cmd만 엽니다.
-- 공개 주소 https://emt-theta.vercel.app/ 는 Google 음성 인식이며 로컬 Qwen으로 자동 전환되지 않습니다.
+- 모델 검사가 끝나면 브라우저가 열립니다. 다음에는 시작 메뉴에서 EMT를 실행합니다.
+- 번역 키 설정과 수동 실행 파일은 %LOCALAPPDATA%\EMT\app에 있습니다.
+- 회의 중 실행 창을 유지합니다. 종료는 창에서 Ctrl+C를 누릅니다.
 
 4. 번역/추천 답변/내 발언 영어 변환 (선택)
 - 번역키설정.cmd를 실행합니다. 열린 .env.local에서 GEMINI_API_KEY= 뒤에 본인 키를 저장합니다.
@@ -39,9 +29,9 @@ NVIDIA GPU/최신 드라이버 권장. 메모리 16GB 이상, 디스크 여유 1
   Gemini 기능은 본인 키의 사용량에 따라 비용이 발생합니다.
 
 5. 문제 해결
-- Python/Node 없음: 공식 설치 후 창을 닫았다 다시 열어 설치.cmd를 실행합니다.
-- CUDA unavailable: NVIDIA 드라이버를 확인하거나 설치.cmd를 CPU로 다시 실행합니다.
-- 모델 다운로드 실패: 네트워크/저장 공간을 확인하고 설치.cmd를 다시 실행합니다. 캐시를 재사용합니다.
+- Python/Node 없음: 공식 설치 후 창을 닫았다 다시 열어 EMT-Setup.exe를 실행합니다.
+- CUDA unavailable: NVIDIA 드라이버를 확인하거나 EMT-Setup.exe를 CPU로 다시 실행합니다.
+- 모델 다운로드 실패: 네트워크/저장 공간을 확인하고 EMT-Setup.exe를 다시 실행합니다. 캐시를 재사용합니다.
 - 모델 준비 중: 설치 완료 문구를 확인하고 기다린 뒤 다시 시작합니다.
 - 4174 포트 사용 중: 이전 로컬 실행 창을 종료합니다. 다른 포트로 몰래 전환하지 않습니다.
 - 처리 속도를 따라가지 못함/시간 초과: 무한 대기 대신 중단합니다. CPU는 회의에 느릴 수 있습니다.
