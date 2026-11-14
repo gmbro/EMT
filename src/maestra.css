@@ -95,3 +95,4 @@
  .meeting-workspace{flex-direction:column}
  .meeting-tools{flex:0 1 42%;min-height:0;border-left:0;border-top:1px solid #dee4eb}
 }
+.meeting-summary .summary-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;font-size:var(--caption-size);padding-top:10px;user-select:text}

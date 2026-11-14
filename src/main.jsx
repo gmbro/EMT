@@ -6,6 +6,7 @@ import { Pause, Square, Maximize2, ArrowDown, ArrowRight, Check, ChevronDown, Co
 import { useMeeting } from './useMeeting.js';
 import './styles.css';
 import './maestra.css';
+import {meetingSummary} from './meeting-summary.mjs';
 import {meetingExport} from './meeting-export.mjs';
 
 
@@ -153,6 +154,7 @@ function App(){
  useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),3500);return()=>clearTimeout(t);},[notice]);
  useEffect(()=>{try{localStorage.setItem('maestra-density-v4',String(size));}catch{}},[size]);
  useEffect(()=>{if(pendingStart&&meeting.ready&&!busy){setPendingStart(false);void meeting.start();}else if(pendingStart&&meeting.error&&!meeting.preparing)setPendingStart(false);},[pendingStart,meeting.ready,busy,meeting.error]);
+ const summary=React.useMemo(()=>meetingSummary(meeting.records),[meeting.records]);
  const copy=async text=>{try{await navigator.clipboard.writeText(text);notify('복사했습니다');}catch{notify('복사 권한을 확인해 주세요');}};
  const homeBusy=meeting.archiveLoading||busy||meeting.voiceStarting||meeting.composeBusy||leaving;
  const goHome=async(discard=false)=>{
@@ -195,11 +197,13 @@ function App(){
  <div className="meeting-workspace">
  <LiveTranscript key={meeting.activeSessionId} meeting={meeting} mode={mode} size={size} copy={copy} edit={setEditing} search={search} onEnableTranslation={()=>{setMode('translate');notify('이후 영어 발화부터 한국어로 번역합니다');}}/>
 
- {(guideVisible||speechVisible)&&<aside aria-label="회의 발언 도구" className="meeting-tools">
+ <aside aria-label="회의 발언 도구" className="meeting-tools">
  {speechVisible&&<section className="compact-speech"><header><strong>내 발언 만들기</strong><button onClick={()=>setSpeechVisible(false)} aria-label="내 발언 만들기 숨기기">숨기기 <X size={12}/></button></header><SpeechComposer text={draft} setText={setDraft} editingSpeech={editingSpeech} setEditingSpeech={setEditingSpeech} meeting={meeting} copy={copy} active={speechVisible} readingSize={size}/></section>}
  {guideVisible&&<section className="compact-guide" aria-label="추천 답변 가이드"><header><strong><Sparkles size={12}/>추천 답변 가이드</strong><div>{meeting.newReplies&&<button onClick={meeting.acceptNewReplies}>새 가이드 보기</button>}<button disabled={!meeting.canSuggest||meeting.replyBusy} onClick={()=>meeting.suggestReplies('비즈니스')}>{meeting.replyBusy?'작성 중…':'새로 제안'}</button><button disabled={!meeting.canSuggest||meeting.replyBusy||!meeting.replies.length} onClick={()=>meeting.suggestReplies('비즈니스',{count:2,alternatives:true})}>대안 보기</button><button aria-pressed={!autoGuides} onClick={()=>setAutoGuides(v=>!v)}>{autoGuides?'자동 갱신 멈춤':'자동 갱신 켜기'}</button><button onClick={()=>setGuideVisible(false)} aria-label="답변 가이드 숨기기">숨기기 <X size={12}/></button></div></header>{meeting.replyError&&<p role="alert">{meeting.replyError}</p>}<div className="compact-replies">{meeting.replies.length?meeting.replies.map((r,i)=><button className="compact-reply" key={`${i}-${r.en}`} aria-label={`${i+1}번 영어 답변 복사`} onClick={()=>copy(r.en)}><small>{r.sourceAt&&`${new Date(r.sourceAt).toLocaleTimeString('ko-KR')} 발화 기준`}{r.fallback?' · 기본 확인 질문':''}</small><span lang="ko">{r.ko}</span><strong lang="en">{r.en}</strong><Copy size={11}/></button>):<p className="dock-empty">영어 질문에 맞는 한국어·영어 답변을 준비합니다.</p>}</div></section>}
 
- </aside>}
+ <section className="compact-guide meeting-summary"><header><strong>실시간 회의 요약</strong><button disabled={!summary} onClick={()=>copy(summary)}><Copy size={14}/>요약 복사</button></header>
+ {summary?<div className="summary-text">{summary}</div>:<p className="dock-empty">발언이 확정되면 주요 내용이 여기에 표시됩니다.</p>}</section>
+ </aside>
  </div>
  {(!speechVisible||!guideVisible)&&<nav className="restore-panels" aria-label="숨긴 영역 다시 열기">
    {!speechVisible&&<button type="button" onClick={()=>setSpeechVisible(true)}><Plus size={14}/>내 발언 열기</button>}
