@@ -57,6 +57,25 @@ export function createMeetingStore({ indexedDB, storage, name = 'meeting-records
         return () => loadMeetings({ getItem: key => key === ARCHIVE_KEY ? JSON.stringify({ version: 1, sessions: request.result }) : null });
       });
     },
+    checkpoint(key, session) {
+      return serial(() => transaction(['meta'], 'readwrite', tx => tx.objectStore('meta').put(session, key)));
+    },
+    async readCheckpoint(key) {
+      await queue;
+      return transaction(['meta'], 'readonly', tx => {
+        const request = tx.objectStore('meta').get(key);
+        return () => request.result;
+      });
+    },
+    finishCheckpoint(key, session) {
+      return serial(async () => {
+        await transaction(['sessions','meta'], 'readwrite', tx => {
+          if (session) tx.objectStore('sessions').put(session);
+          if (key) tx.objectStore('meta').delete(key);
+        });
+        if (session) notify();
+      });
+    },
     put(session) { return serial(async () => { await transaction(['sessions'], 'readwrite', tx => { tx.objectStore('sessions').put(session); }); notify(); }); },
     remove(id) { return serial(async () => { await transaction(['sessions'], 'readwrite', tx => { tx.objectStore('sessions').delete(id); }); notify(); }); },
     async close() { await queue; database?.close(); },

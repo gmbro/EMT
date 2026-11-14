@@ -19,7 +19,18 @@ import { meetingContext, isGuideMoment } from './meeting-context.mjs';
 import { usageSummary, subscribeUsage } from './request-metrics.mjs';
 import { createGoogleLive } from './google-live.js';
 
-export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
+const refreshKey = 'emt-pending-meeting';
+function readPendingKey() {
+  try { return sessionStorage.getItem(refreshKey); } catch { return null; }
+}
+
+export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='',editingSpeech=null}={}) {
+  const draftInput=useRef(null);
+  draftInput.current={text:typedDraft,editingSpeech};
+  const [recovery,setRecovery]=useState(readPendingKey);
+  const recoveryKey=useRef(recovery);
+  const checkpointKey=useRef(null), lastCheckpoint=useRef(null), baseline=useRef(null);
+  const draftSpeechId=useRef(null);
   const [availableProvider,setAvailableProvider]=useState(LOCAL_QWEN?'qwen':'pending');
   const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')!=='deepgram';}catch{return true;}});
   const [separateSpeakers,setSeparateSpeakers]=useState(false);
@@ -73,8 +84,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   const sessionMeta = useRef({ id: crypto.randomUUID(), createdAt: new Date().toISOString() });
   const [sessionBusy, setSessionBusy] = useState(false);
   const [storageError, setStorageError] = useState('');
-  const [archiveLoading, setArchiveLoading] = useState(true), [saving, setSaving] = useState(false);
-  const store = useRef(null), storeReady = useRef(null), revision = useRef(0), queuedRevision = useRef(-1), savedRevision = useRef(-1), saveCount = useRef(0), saveTask = useRef(null);
+  const [archiveLoading, setArchiveLoading] = useState(true);
+  const store = useRef(null), storeReady = useRef(null), revision = useRef(0);
   const [speeches, setSpeeches] = useState([]), [composeBusy, setComposeBusy] = useState(false);
   const speechesRef = useRef(speeches), composer = useRef(null); speechesRef.current = speeches;
   function changeSpeeches(update) { const next = update(speechesRef.current); speechesRef.current = next; setSpeeches(next); revision.current++; }
@@ -145,20 +156,53 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     return () => { mounted = false; };
   }, []);
   useEffect(() => {
-    // A periodic checkpoint cannot be postponed indefinitely by continuous speech.
-    const timer = setInterval(() => { if (revision.current !== queuedRevision.current) void persistCurrent(); }, 1500);
-    return () => clearInterval(timer);
-  }, []);
-  useEffect(() => { revision.current++; }, [replies]);
-  useEffect(() => {
-    const save = () => { void persistCurrent(); };
+    const save = () => {
+      if (!hasWork()) return;
+      const key=ensureDraftKey();
+      if (!key) return;
+      const stamp=checkpointStamp();
+      if (stamp===lastCheckpoint.current) return;
+      const snapshot=currentSnapshot();
+      void store.current.checkpoint(key,snapshot).then(()=>{
+        if (checkpointKey.current===key) lastCheckpoint.current=stamp;
+      }).catch(()=>setStorageError('임시 저장에 실패했습니다. 홈에서 저장을 다시 시도해 주세요.'));
+    };
+    // Navigation can cancel an IndexedDB transaction. Keep the final changes
+    // in this tab until the user chooses what belongs in the archive.
+    const capture=()=>{
+      if (!hasWork()) {
+        if (checkpointKey.current && !recoveryKey.current) {
+          const key=checkpointKey.current;
+          sessionStorage.removeItem(key);
+          sessionStorage.removeItem(refreshKey);
+          checkpointKey.current=null;lastCheckpoint.current=null;
+          void store.current.finishCheckpoint(key).catch(()=>{});
+        }
+        return true;
+      }
+      try {
+        const key=ensureDraftKey();
+        if (!key) return false;
+        if (checkpointStamp()!==lastCheckpoint.current) sessionStorage.setItem(key,JSON.stringify(currentSnapshot()));
+        else sessionStorage.removeItem(key);
+        return true;
+      } catch { return false; }
+    };
+    const guard=event=>{if(!capture()){event.preventDefault();event.returnValue='';}};
+    const timer=setInterval(save,1500);
+    window.addEventListener('beforeunload',guard);
+    window.addEventListener('pagehide',capture);
     const sync = async event => {
       if (event.key !== ARCHIVE_EVENT_KEY) return;
       try { const next = await store.current.read(); archiveRef.current = next; if (alive.current) setSessions(next); } catch { /* Current save errors are surfaced separately. */ }
     };
-    window.addEventListener('pagehide', save);
     window.addEventListener('storage', sync);
-    return () => { window.removeEventListener('pagehide', save); window.removeEventListener('storage', sync); void persistCurrent(false); };
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeunload',guard);
+      window.removeEventListener('pagehide',capture);
+      window.removeEventListener('storage',sync);
+    };
   }, []);
 
   const mutateHistory = update => {
@@ -781,55 +825,86 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     replyRunner.current.submit({english});
   }
   function acceptNewReplies(){if(newReplies){setReplies(newReplies);setNewReplies(null);}}
-  async function persistCurrent(notify = true) {
-    if (clearing.current || deletingSession.current === sessionMeta.current.id || (!historyRef.current.records.length && !speechesRef.current.length)) return;
-    const checkpoint = revision.current;
-    if (checkpoint === queuedRevision.current) return saveTask.current;
-    queuedRevision.current = checkpoint;
-    const snapshot = { ...sessionMeta.current, purpose:purposeRef.current, glossary:glossaryRef.current, updatedAt: new Date().toISOString(), replies: repliesRef.current,
-      speeches: speechesRef.current.map(row => ({ ...row })), records: historyRef.current.records.map(row => ({ ...row })) };
-    const next = mergeMeeting(archiveRef.current, snapshot, snapshot.records);
-    archiveRef.current = next;
-    saveCount.current++;
-    if (notify && alive.current) { setSessions(next); setSaving(true); }
-    const task = (async () => {
-      try {
-        await storeReady.current; await store.current.put(snapshot);
-        savedRevision.current = checkpoint;
-        if (notify && alive.current) setStorageError('');
-        return true;
-      } catch {
-        queuedRevision.current = -1;
-        if (notify && alive.current) setStorageError('회의 기록을 저장하지 못했어요. 저장 공간·권한을 확인하고 파일로 저장해 주세요.');
-        return false;
-      } finally { saveCount.current--; if (notify && alive.current && !saveCount.current) setSaving(false); }
-    })();
-    saveTask.current = task;
-    return task;
+  function hasWork() {
+    if (clearing.current || recoveryKey.current) return false;
+    if (draftInput.current.text.trim()) return true;
+    if (!historyRef.current.records.length && !speechesRef.current.length) return false;
+    const base=baseline.current;
+    return !base || base.records!==historyRef.current.records || base.speeches!==speechesRef.current ||
+      base.replies!==repliesRef.current || base.glossary!==glossaryRef.current || base.purpose!==purposeRef.current;
   }
-  async function newMeeting(draft) {
+  function checkpointStamp() {
+    return JSON.stringify([revision.current,repliesRef.current,draftInput.current.editingSpeech,draftInput.current.text]);
+  }
+  function ensureDraftKey() {
+    if (!checkpointKey.current) {
+      const key='emt-draft-'+crypto.randomUUID();
+      try { sessionStorage.setItem(refreshKey,key); } catch { return null; }
+      checkpointKey.current=key;
+    }
+    return checkpointKey.current;
+  }
+  function currentSnapshot() {
+    const {text,editingSpeech}=draftInput.current;
+    let speeches=speechesRef.current;
+    if (text.trim()) {
+      const id=editingSpeech||(draftSpeechId.current ||= crypto.randomUUID());
+      const old=speeches.find(item=>item.id===id);
+      if (old?.ko!==text.trim()) {
+        const item={id,ko:text.trim(),en:'',status:'draft',input:'text',createdAt:old?.createdAt||Date.now()};
+        speeches=old?speeches.map(row=>row.id===id?item:row):[...speeches,item];
+      }
+    }
+    return {...sessionMeta.current,updatedAt:new Date().toISOString(),purpose:purposeRef.current,glossary:glossaryRef.current,
+      records:historyRef.current.records,replies:repliesRef.current,speeches};
+  }
+  async function finishCheckpoint(key,snapshot) {
+    await storeReady.current;
+    await store.current.finishCheckpoint(key,snapshot);
+    if (key) {
+      sessionStorage.removeItem(key);
+      if (readPendingKey()===key) sessionStorage.removeItem(refreshKey);
+    }
+    checkpointKey.current=null;
+    lastCheckpoint.current=null;
+    if (snapshot) {
+      const next=mergeMeeting(archiveRef.current,snapshot,snapshot.records);
+      archiveRef.current=next;setSessions(next);
+    }
+    setStorageError('');
+  }
+  async function resolveRecovery(save) {
+    const key=recoveryKey.current;
+    if (!key || sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      let snapshot;
+      if (save) {
+        snapshot=JSON.parse(sessionStorage.getItem(key)||'null') || await store.current.readCheckpoint(key);
+        if (!snapshot) throw new Error('임시 기록을 읽지 못했습니다. 다시 시도해 주세요.');
+      }
+      await finishCheckpoint(key,snapshot);
+      recoveryKey.current=null;setRecovery(null);
+    } finally { setSessionBusy(false); }
+  }
+  async function newMeeting({discard=false}={}) {
     if (archiveLoading || sessionBusy || preparingRef.current || starting) return false;
     setSessionBusy(true);
     try {
-      await stopOwnVoice(false,{flush:true}); await ownQueue.current; await stop(); await speechQueue.current; await translationQueue.current;
-      if (draft?.ko.trim()) {
-        changeSpeeches(rows => {
-          const old = rows.find(row => row.id === draft.id);
-          if (old?.ko === draft.ko) return rows;
-          const item = {id:draft.id, ko:draft.ko.trim(), en:'', status:'draft', input:'text', createdAt:old?.createdAt || Date.now()};
-          return old ? rows.map(row => row.id === item.id ? item : row) : [...rows,item];
-        });
-      }
-      if (await persistCurrent() === false) return false;
-      await clear(); selectSpeaker('');
+      await stopOwnVoice(false,{flush:!discard}); await ownQueue.current;
+      await stop({flush:!discard}); await speechQueue.current; await translationQueue.current;
+      const snapshot=!discard && hasWork()?currentSnapshot():undefined;
+      if (checkpointKey.current || snapshot) await finishCheckpoint(checkpointKey.current,snapshot);
+      await clear(); selectSpeaker(''); baseline.current=null; draftSpeechId.current=null;
       sessionMeta.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
       return true;
-    } finally { setSessionBusy(false); }
+    } catch { setStorageError('회의 기록을 처리하지 못했습니다. 다시 시도해 주세요.');return false; }
+    finally { setSessionBusy(false); }
   }
   async function openMeeting(id) {
     if (archiveLoading || composeBusy || active.current || starting || preparing || sessionBusy || isBusy()) return;
     const selected = archiveRef.current.find(item => item.id === id); if (!selected) return;
-    if (await persistCurrent() === false) return;
+    baseline.current=selected;
     await clear(); selectSpeaker(''); sessionMeta.current = { id: selected.id, createdAt: selected.createdAt };
     setGlossary(selected.glossary||'');setMeetingPurpose(selected.purpose||'');mutateHistory(() => selected.records); setReplies(selected.replies || []); changeSpeeches(() => selected.speeches || []); setElapsed(0);
   }
@@ -845,7 +920,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     finally { deletingSession.current = null; setSessionBusy(false); }
   }
 
-  return { hasUnsaved: () => Boolean((historyRef.current.records.length || speechesRef.current.length) && savedRevision.current !== revision.current), testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
+  return { hasUnsaved:hasWork, recovery, resolveRecovery, testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving:sessionBusy, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
     listening, starting, stopping, level, elapsed, interim, partial, draftSample, records: history.records, characterCount: history.characterCount,
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,

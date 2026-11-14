@@ -20,7 +20,7 @@ function ReadingSizeControl({value,onChange}){
   return <div className="reading-controls" role="group" aria-label="화면 크기"><span>화면 크기</span><div>{SCREEN_SIZES.map(option=><button type="button" key={option.value} aria-label={option.name} aria-pressed={value===option.value} onClick={()=>onChange(option.value)}>{option.label}</button>)}</div></div>;
 }
 
-function Dialog({ title, onClose, children, className = '', actions }) {
+function Dialog({ title, onClose, children, className = '', actions, required=false }) {
   const dialog = useRef(null),titleId=useId();
   const close = useRef(onClose);
   close.current = onClose;
@@ -40,7 +40,7 @@ function Dialog({ title, onClose, children, className = '', actions }) {
     document.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', onKey); previous?.focus(); };
   }, []);
-  return <div className={`modal-backdrop ${className==='meeting-room'?'meeting-backdrop':''}`} onClick={event=>{if(event.target===event.currentTarget&&className!=='meeting-room')onClose();}}><section ref={dialog} className={`dialog ${className}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={event => event.stopPropagation()}><div className="dialog-head"><h2 id={titleId}>{title}</h2><div className="dialog-head-actions">{actions}<button className="icon-button" onClick={onClose} aria-label="닫기"><X size={21}/></button></div></div>{children}</section></div>;
+  return <div className={`modal-backdrop ${className==='meeting-room'?'meeting-backdrop':''}`} onClick={event=>{if(event.target===event.currentTarget&&className!=='meeting-room')onClose();}}><section ref={dialog} className={`dialog ${className}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={event => event.stopPropagation()}><div className="dialog-head"><h2 id={titleId}>{title}</h2><div className="dialog-head-actions">{actions}{!required&&<button className="icon-button" onClick={onClose} aria-label="닫기"><X size={21}/></button>}</div></div>{children}</section></div>;
 }
 
 const workingRecord=record=>record.status==='recognizing'||record.status==='translating'||record.status==='recovering';
@@ -138,12 +138,13 @@ function LiveTranscript({meeting,mode,size,copy,edit,search,onEnableTranslation}
 function App(){
  const localModel=useLocalQwenReady(LOCAL_QWEN);
  const [mode,setMode]=useState(LOCAL_QWEN?'transcript':'translate'),[guideVisible,setGuideVisible]=useState(true),[speechVisible,setSpeechVisible]=useState(true),[autoGuides,setAutoGuides]=useState(!LOCAL_QWEN);
- const meeting=useMeeting({transcribeOnly:mode==='transcript',guidesEnabled:autoGuides&&guideVisible});
- const [screen,setScreen]=useState('history'),[settings,setSettings]=useState(false),[editing,setEditing]=useState(null),[deleting,setDeleting]=useState(null),[notice,setNotice]=useState(''),[pendingStart,setPendingStart]=useState(false),[ended,setEnded]=useState(false),[search,setSearch]=useState('');
  const [draft,setDraft]=useState(''),[editingSpeech,setEditingSpeech]=useState(null);
+ const meeting=useMeeting({transcribeOnly:mode==='transcript',guidesEnabled:autoGuides&&guideVisible,typedDraft:draft,editingSpeech});
+ const [screen,setScreen]=useState('history'),[settings,setSettings]=useState(false),[editing,setEditing]=useState(null),[deleting,setDeleting]=useState(null),[notice,setNotice]=useState(''),[pendingStart,setPendingStart]=useState(false),[ended,setEnded]=useState(false),[search,setSearch]=useState('');
+
  const [homePrompt,setHomePrompt]=useState(false),[leaving,setLeaving]=useState(false),[homeError,setHomeError]=useState('');
- const draftId=useRef(null);
- useEffect(()=>{setDraft('');setEditingSpeech(null);draftId.current=null;},[meeting.activeSessionId]);
+
+ useEffect(()=>{setDraft('');setEditingSpeech(null);},[meeting.activeSessionId]);
  const [size,setSize]=useState(()=>{try{const value=Number(localStorage.getItem('maestra-density-v4') || Math.round(Number(localStorage.getItem('maestra-density-v3'))*1.2));return [11,12,13,14,15,16,17,18,19,20].includes(value)?value:17;}catch{return 17;}});
  const [exportOpen,setExportOpen]=useState(false),[exportBusy,setExportBusy]=useState(false),[exportOptions,setExportOptions]=useState({format:'txt',content:'both',timestamps:true,guides:false,speeches:false});
  const busy=meeting.preparing||meeting.starting||meeting.stopping||meeting.sessionBusy;
@@ -154,12 +155,11 @@ function App(){
  useEffect(()=>{if(pendingStart&&meeting.ready&&!busy){setPendingStart(false);void meeting.start();}else if(pendingStart&&meeting.error&&!meeting.preparing)setPendingStart(false);},[pendingStart,meeting.ready,busy,meeting.error]);
  const copy=async text=>{try{await navigator.clipboard.writeText(text);notify('복사했습니다');}catch{notify('복사 권한을 확인해 주세요');}};
  const homeBusy=meeting.archiveLoading||busy||meeting.voiceStarting||meeting.composeBusy||leaving;
- const goHome=async()=>{
+ const goHome=async(discard=false)=>{
    if(homeBusy)return;
    setLeaving(true);setPendingStart(false);setHomeError('');
    try{
-     if(draft.trim()&&!draftId.current)draftId.current=crypto.randomUUID();
-     const saved=await meeting.newMeeting(draft.trim()?{id:editingSpeech||draftId.current,ko:draft}:undefined);
+     const saved=await meeting.newMeeting({discard});
      if(!saved){setHomePrompt(true);setHomeError('회의 기록에 보관하지 못했습니다. 다시 저장해 주세요.');return;}
      setHomePrompt(false);setEnded(false);setSearch('');setScreen('history');
      if(homePrompt)notify('홈으로 이동했습니다.');
@@ -207,10 +207,19 @@ function App(){
  </nav>}
  </main>}
  <footer className="fixed-controls"><div className="footer-left"><button type="button" className="mini-brand" aria-label="석변의 미팅 뿌시기 홈" title="홈으로 이동" disabled={screen!=='setup'&&homeBusy} onClick={requestHome}><Languages size={15}/><span>석변의 미팅 뿌시기</span></button>{screen!=='history'&&<button disabled={homeBusy} onClick={requestHome}><FileText size={12}/>회의 기록</button>}</div><div className="footer-center">{screen==='live'&&<>{ended?<><button disabled={busy||meeting.voiceSpeaking} onClick={resume} aria-label="회의 이어하기"><Play size={12}/>이어하기</button><span className="saved-state">{meeting.storageError?'저장 실패':meeting.saving?'저장 중':'회의 종료됨'}</span><button onClick={()=>setExportOpen(true)} disabled={!meeting.records.length&&!meeting.speeches.length}><Download size={13}/>내보내기</button></>:<><button aria-label={meeting.listening?'일시정지':'재개'} disabled={busy} onClick={()=>meeting.listening?meeting.stop():resume()}>{meeting.listening?<Pause size={14}/>:<Play size={14}/>}<span>{meeting.listening?'일시정지':'재개'}</span></button><button className="stop-button" disabled={busy} onClick={finish}><Square size={12}/>종료</button></>}</>}</div><div className="footer-right">{screen==='live'&&<><button aria-pressed={guideVisible} onClick={()=>setGuideVisible(v=>!v)}>답변 가이드</button><button aria-pressed={speechVisible} onClick={()=>setSpeechVisible(v=>!v)}>내 발언</button></>}<button aria-label="설정" onClick={()=>setSettings(true)}><Settings2 size={14}/></button>{screen==='live'&&<button aria-label="전체 화면" onClick={()=>document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.().catch(()=>notify('이 브라우저에서는 전체 화면을 사용할 수 없습니다'))}><Maximize2 size={14}/></button>}</div></footer>
+ {meeting.recovery&&<Dialog title="새로고침 전 회의를 저장할까요?" onClose={()=>{}} required>
+   <p>마지막으로 받아쓴 원문과 번역, 입력 중이던 내 발언을 회의 기록에 보관할 수 있습니다. 기존 회의를 열었다면 이번 변경분에만 적용됩니다.</p>
+   {homeError&&<p role="alert">{homeError}</p>}
+   <div className="home-actions">{[false,true].map(save=><button key={String(save)} className={save?'primary-button':''} disabled={homeBusy} onClick={async()=>{
+     setHomeError('');
+     try{await meeting.resolveRecovery(save);notify(save?'회의 기록에 저장했습니다.':'홈으로 이동했습니다.');}
+     catch{setHomeError('임시 기록을 처리하지 못했습니다. 다시 시도해 주세요.');}
+   }}>{save?'저장하고 홈으로':'기록하지 않고 홈으로'}</button>)}</div>
+ </Dialog>}
  {homePrompt&&<Dialog title="회의를 저장하고 홈으로 갈까요?" onClose={()=>{if(!leaving)setHomePrompt(false);}}>
    <p>진행 중인 받아쓰기를 마치고 원문, 번역, 내 발언을 이 브라우저의 회의 기록에 보관합니다.</p>
    {homeError&&<p role="alert">{homeError}</p>}
-   <div className="home-actions"><button disabled={leaving} onClick={()=>setHomePrompt(false)}>취소</button><button className="primary-button" disabled={homeBusy} onClick={goHome}>{leaving?'저장 중…':'저장하고 홈으로'}</button></div>
+   <div className="home-actions"><button disabled={leaving} onClick={()=>setHomePrompt(false)}>취소</button><button disabled={homeBusy} onClick={()=>goHome(true)}>기록하지 않고 홈으로</button><button className="primary-button" disabled={homeBusy} onClick={()=>goHome()}>{leaving?'저장 중…':'저장하고 홈으로'}</button></div>
  </Dialog>}
  {notice&&<div className="toast" role="status">{notice}</div>}
  {exportOpen&&<Dialog title="회의 내보내기" onClose={()=>setExportOpen(false)}><div className="export-form"><label>파일 형식<select aria-label="파일 형식" value={exportOptions.format} onChange={e=>setExportOptions({...exportOptions,format:e.target.value})}><option value="txt">TXT</option><option value="docx">DOCX</option><option value="json">JSON</option></select></label><label>내용<select aria-label="내보낼 내용" value={exportOptions.content} onChange={e=>setExportOptions({...exportOptions,content:e.target.value})}><option value="both">원문 + 번역</option><option value="original">원문</option><option value="translation">번역</option></select></label>{[['timestamps','시각 포함'],['guides','추천 답변 포함'],['speeches','내 발언 초안 포함']].map(([key,label])=><label key={key}><input type="checkbox" checked={exportOptions[key]} onChange={e=>setExportOptions({...exportOptions,[key]:e.target.checked})}/>{label}</label>)}{meeting.records.some(r=>r.status!=='complete')&&<p>진행 중이거나 미완료인 문장이 포함됩니다.</p>}<button className="primary-button" disabled={exportBusy} onClick={download}>{exportBusy?'파일 만드는 중…':'다운로드'}</button></div></Dialog>}
