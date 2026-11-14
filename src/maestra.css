@@ -66,3 +66,6 @@
 @media(max-width:760px){.fixed-controls{font-size:13.5px;overflow-x:auto}.fixed-controls>div{flex-shrink:0}}
 
 .turn-sheet .turn{border-bottom:0;padding-block:6px}
+
+.restore-panels{display:flex;flex-wrap:wrap;gap:8px;padding:8px 14px;border-bottom:1px solid #e3e9f1;flex-shrink:0}
+.maestra-app .restore-panels button{min-height:36px;padding:6px 12px;border:1px solid #b7cfee;border-radius:8px;background:#f1f7ff;color:#255887;font-size:14px}
