@@ -12,3 +12,8 @@ test('copyable meeting highlights preserve decimals and English terms and ignore
   assert.match(summary,/\[열린 질문\]\n• 언제/);
   assert.ok(!summary.includes('초안'));
 });
+
+test('small talk, uncertain dates and microphone checks do not create an agenda',()=>{
+  const rows=['저도 네.','다시 유치원 가는 그 기회가 기회 이게 다 끝나지 않아.','다음에 종료','7월에 가요?','아, 6순에 가요?','예?','Hi hey hey hey yo.'].map(original=>({original}));
+  assert.equal(meetingSummary(rows),'');
+});

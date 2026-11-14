@@ -505,8 +505,18 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     finally { previewBusy.current = false; if (latestPreview.current) void drainPreview(); }
   }
 
-  async function start() {
-    if (!ready || starting || stopping || stopTask.current || clearing.current || sessionBusy || ownVoice.current || ownStarting.current || active.current || (isBusy() && !engine.current?.cloudSpeech)) return;
+  async function start({fromRecordButton=false}={}) {
+    if ((!ready && !fromRecordButton) || starting || stopping || stopTask.current || clearing.current || sessionBusy || ownVoice.current || ownStarting.current || active.current || (isBusy() && !engine.current?.cloudSpeech)) return;
+    // Request the input device inside the click gesture. Translation checks
+    // can run alongside capture; translation itself awaits prepareTranslation.
+    if (fromRecordButton && !ready) {
+      engine.current ||= new MeetingEngine();
+      const currentEngine=engine.current;
+      setReady(true);
+      void currentEngine.prepare(language,{speechProvider,source,translationEnabled:!displayOptions.current.transcribeOnly}).then(names=>{
+        if(alive.current && engine.current===currentEngine)setModelNames(names);
+      }).catch(()=>{}); // Translation retries its readiness check on first use.
+    }
     const token = ++startToken.current, session = epoch.current;
     setStarting(true); setError(''); setElapsed(0); resetDraft();
     let audioContext;

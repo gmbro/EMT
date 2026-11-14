@@ -169,6 +169,7 @@ function App(){
      const saved=await meeting.newMeeting({discard});
      if(!saved){setHomePrompt(true);setHomeError('회의 기록에 보관하지 못했습니다. 다시 저장해 주세요.');return;}
      setHomePrompt(false);setEnded(false);setSearch('');setScreen('history');
+     if(history.state?.emtLive)history.back();
      if(homePrompt)notify('홈으로 이동했습니다.');
    }catch{setHomePrompt(true);setHomeError('저장을 마치지 못했습니다. 다시 시도해 주세요.');}
    finally{setLeaving(false);}
@@ -185,12 +186,19 @@ function App(){
    meeting.changeLanguage('en-US');
    setScreen('setup');
  };
- const begin=async()=>{if(locked)return;if(await meeting.newMeeting()===false)return;setScreen('live');setEnded(false);setSearch('');setPendingStart(true);if(!meeting.ready)void meeting.prepare();};
+ const begin=()=>{if(locked)return;setScreen('live');setEnded(false);setSearch('');void meeting.start({fromRecordButton:true});};
+ useEffect(()=>{
+   if(screen!=='live')return;
+   const guard=()=>{if(!history.state?.emtLive)history.pushState({emtLive:true},'');};
+   const onBack=()=>{guard();setSummaryOpen(false);setSettings(false);setExportOpen(false);setEditing(null);setHomeError('');setHomePrompt(true);};
+   guard();window.addEventListener('popstate',onBack);
+   return ()=>window.removeEventListener('popstate',onBack);
+ },[screen]);
  const resume=()=>{setEnded(false);if(meeting.ready)void meeting.start();else{setPendingStart(true);void meeting.prepare();}};
  const finish=async()=>{
    if(finishing)return;
    setFinishing(true);setPendingStart(false);
-   try{const rows=await meeting.finishRecording();setEnded(true);if(meetingSummary(rows)){setSummaryOpen(true);notify('요약본이 정리되었습니다.');}else notify('요약할 발언이 없습니다.');}
+   try{const rows=await meeting.finishRecording();setEnded(true);if(meetingSummary(rows)){setSummaryOpen(true);notify('요약본이 정리되었습니다.');}else notify('요약할 주요 안건이 없습니다.');}
    finally{setFinishing(false);}
  };
  const openHistory=async id=>{const saved=meeting.sessions.find(s=>s.id===id);setMode(saved?.records.length&&saved.records.every(r=>r.transcriptOnly||r.language==='ko-KR')?'transcript':'translate');await meeting.openMeeting(id);setScreen('live');setEnded(true);setSearch('');if(!meeting.ready)void meeting.prepare();};
@@ -202,6 +210,7 @@ function App(){
      <MeetingHistory meeting={{...meeting,openMeeting:openHistory}} locked={locked||meeting.archiveLoading} onDelete={setDeleting}/>
    </div>
  </main>:screen==='setup'?<main className="setup-main"><div className="setup-box"><h1>오늘 어떤 회의를 시작할까요?</h1><div className="mode-switch"><button aria-pressed={mode==='translate'} onClick={()=>setMode('translate')}><Languages size={14}/>받아쓰기 + 번역</button><button aria-pressed={mode==='transcript'} onClick={()=>setMode('transcript')}><FileText size={14}/>받아쓰기만</button></div><div className="language-pair"><select aria-label="발화 언어" value={meeting.language} onChange={e=>meeting.changeLanguage(e.target.value)}><option value="auto">언어 감지 · 영어 / 한국어</option><option value="en-US">English</option><option value="ko-KR">한국어</option></select><ArrowRight size={16}/><span>{mode==='translate'?'한국어':'원문 그대로'}</span></div><div className="setup-options">{meeting.availableProvider==='deepgram'&&<select aria-label="받아쓰기 모델" value={meeting.speechProvider} disabled={locked} onChange={event=>meeting.chooseSpeechProvider(event.target.value)}><option value="deepgram">Deepgram</option><option value="google">Gemini · 수동 화자 지정</option></select>}{meeting.speechProvider==='deepgram'&&<label><input type="checkbox" checked={meeting.separateSpeakers} disabled={locked} onChange={event=>meeting.setSeparateSpeakers(event.target.checked)}/>자동 화자 분리</label>}<select aria-label="음성 입력" value={meeting.source} onChange={e=>meeting.changeSource(e.target.value)}><option value="microphone">마이크</option><option value="meeting-tab" disabled={!navigator.mediaDevices?.getDisplayMedia}>회의 탭 오디오</option></select><label><input type="checkbox" checked={autoGuides} onChange={e=>setAutoGuides(e.target.checked)}/>추천 답변</label></div><div className="start-area"><span>누르고 말하기 시작</span><button className="record-button" aria-label="새 회의 시작" disabled={locked||meeting.archiveLoading||meeting.speechProvider==='pending'||!localModel.ready} onClick={begin}><Mic size={30}/></button></div><button className="workspace-preview" onClick={()=>{setScreen('live');if(!meeting.ready)void meeting.prepare();}}>마이크 없이 작업 화면 열기</button>{LOCAL_QWEN&&<p className="privacy-mini" role="status">{localModel.message}</p>}<p className="privacy-mini">{LOCAL_QWEN?'음성은 이 컴퓨터의 Qwen에서, 번역·추천 답변은 Google에서 처리합니다.':meeting.speechProvider==='deepgram'?'회의 음성은 Deepgram에서 받아쓰고, 번역과 내 발언은 Google에서 처리합니다.':'음성과 텍스트를 Google로 전송해 처리합니다.'}</p></div></main>:<main className="live-main">
+ {(pendingStart||meeting.starting)&&<div className="recording-loading" role="status"><LoaderCircle className="spin" size={20}/><strong>받아쓰기 연결 중</strong><span>마이크 또는 탭 오디오 권한을 확인해 주세요.</span></div>}
  <header className="live-top"><span>{new Date(meeting.activeSessionDate).toLocaleDateString('ko-KR')} · {meeting.records.length}개 발화</span><span role="status">{meeting.preparing||meeting.starting?'연결 중':meeting.stopping?'마무리 중':meeting.listening?(meeting.level>0.01?'음성 입력 중':'음성 입력 대기 중'):ended?'회의 종료됨':'일시정지'} {meeting.elapsed>0&&formatTime(meeting.elapsed)} {meeting.pending>0&&`· ${meeting.pending}건 처리 중`}</span><input aria-label="회의 기록 검색" placeholder="기록 검색" value={search} onChange={e=>setSearch(e.target.value)}/></header>
  {(meeting.error||meeting.storageError)&&<div role="alert" className="live-error">{meeting.error||meeting.storageError}<button onClick={resume} disabled={busy}>다시 연결</button></div>}
  <div className="meeting-workspace">
@@ -213,7 +222,7 @@ function App(){
  {guideVisible&&<section className="compact-guide" aria-label="추천 답변 가이드"><header><strong><Sparkles size={12}/>추천 답변 가이드</strong><div>{meeting.newReplies&&<button onClick={meeting.acceptNewReplies}>새 가이드 보기</button>}<button disabled={!meeting.canSuggest||meeting.replyBusy} onClick={()=>meeting.suggestReplies('비즈니스')}>{meeting.replyBusy?'작성 중…':'새로 제안'}</button><button disabled={!meeting.canSuggest||meeting.replyBusy||!meeting.replies.length} onClick={()=>meeting.suggestReplies('비즈니스',{count:2,alternatives:true})}>대안 보기</button><button aria-pressed={!autoGuides} onClick={()=>setAutoGuides(v=>!v)}>{autoGuides?'자동 갱신 멈춤':'자동 갱신 켜기'}</button><button onClick={()=>setGuideVisible(false)} aria-label="답변 가이드 숨기기">숨기기 <X size={12}/></button></div></header>{meeting.replyError&&<p role="alert">{meeting.replyError}</p>}<div className="compact-replies">{meeting.replies.length?meeting.replies.slice(0,2).map((r,i)=><button className="compact-reply" key={`${i}-${r.en}`} aria-label={`${i+1}번 영어 답변 복사`} onClick={()=>copy(r.en)}><small>{r.sourceAt&&`${new Date(r.sourceAt).toLocaleTimeString('ko-KR')} 발화 기준`}{r.fallback?' · 기본 확인 질문':''}</small><span lang="ko">{r.ko}</span><strong lang="en">{r.en}</strong><Copy size={11}/></button>):<p className="dock-empty">영어 질문에 맞는 한국어·영어 답변을 준비합니다.</p>}</div></section>}
 
  <section className="compact-guide meeting-summary"><header><strong>회의 요약</strong>{summary&&<button onClick={()=>setSummaryOpen(true)}>전체 보기</button>}<button disabled={!summary} onClick={()=>copy(summary)}><Copy size={14}/>요약 복사</button></header>
- {summary?<div className="summary-text">{summary}</div>:<p className="dock-empty">{ended?'요약할 발언이 없습니다.':'회의를 종료하면 요약본이 정리됩니다.'}</p>}</section>
+ {summary?<div className="summary-text">{summary}</div>:<p className="dock-empty">{ended?'요약할 주요 안건이 없습니다.':'회의를 종료하면 요약본이 정리됩니다.'}</p>}</section>
  </aside>
  </div>
  {(!speechVisible||!guideVisible)&&<nav className="restore-panels" aria-label="숨긴 영역 다시 열기">
@@ -238,7 +247,7 @@ function App(){
  {homePrompt&&<Dialog title="회의를 저장하고 홈으로 갈까요?" onClose={()=>{if(!leaving)setHomePrompt(false);}}>
    <p>진행 중인 받아쓰기를 마치고 원문, 번역, 내 발언을 이 브라우저의 회의 기록에 보관합니다.</p>
    {homeError&&<p role="alert">{homeError}</p>}
-   <div className="home-actions"><button disabled={leaving} onClick={()=>setHomePrompt(false)}>취소</button><button disabled={homeBusy} onClick={()=>goHome(true)}>기록하지 않고 홈으로</button><button className="primary-button" disabled={homeBusy} onClick={()=>goHome()}>{leaving?'저장 중…':'저장하고 홈으로'}</button></div>
+   <div className="home-actions"><button disabled={homeBusy} onClick={()=>{setHomePrompt(false);if(!meeting.listening&&!pendingStart)resume();}}>현재 회의에서 이어서 번역</button><button disabled={homeBusy} onClick={()=>goHome(true)}>기록하지 않고 홈으로</button><button className="primary-button" disabled={homeBusy} onClick={()=>goHome()}>{leaving?'저장 중…':'저장하고 홈으로'}</button></div>
  </Dialog>}
  {notice&&<div className="toast" role="status">{notice}</div>}
  {exportOpen&&<Dialog title="회의 내보내기" onClose={()=>setExportOpen(false)}><div className="export-form"><label>파일 형식<select aria-label="파일 형식" value={exportOptions.format} onChange={e=>setExportOptions({...exportOptions,format:e.target.value})}><option value="txt">TXT</option><option value="docx">DOCX</option><option value="json">JSON</option></select></label><label>내용<select aria-label="내보낼 내용" value={exportOptions.content} onChange={e=>setExportOptions({...exportOptions,content:e.target.value})}><option value="both">원문 + 번역</option><option value="original">원문</option><option value="translation">번역</option></select></label>{[['timestamps','시각 포함'],['guides','추천 답변 포함'],['speeches','내 발언 초안 포함']].map(([key,label])=><label key={key}><input type="checkbox" checked={exportOptions[key]} onChange={e=>setExportOptions({...exportOptions,[key]:e.target.checked})}/>{label}</label>)}{meeting.records.some(r=>r.status!=='complete')&&<p>진행 중이거나 미완료인 문장이 포함됩니다.</p>}<button className="primary-button" disabled={exportBusy} onClick={download}>{exportBusy?'파일 만드는 중…':'다운로드'}</button></div></Dialog>}

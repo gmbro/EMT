@@ -116,3 +116,4 @@
  .meeting-tools[data-tab=speech]>.compact-guide,.meeting-tools[data-tab=guide]>.compact-speech,.meeting-tools[data-tab=guide]>.meeting-summary,.meeting-tools[data-tab=summary]>.compact-speech,.meeting-tools[data-tab=summary]>.compact-guide:not(.meeting-summary){display:none}
  .meeting-tools>.meeting-summary{flex:1;max-height:none}
 }
+.recording-loading{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 18px;background:#edf5ff;color:#235587;font-size:15px}
