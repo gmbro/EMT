@@ -9,7 +9,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
   const health=createSpeechHealth({now}), metricId=crypto.randomUUID();
   let capturedSamples=0,sentSamples=0,reconnections=0,usageReports=0;
   const report=()=>recordAudioUsage(metricId,{capturedSeconds:capturedSamples/16000,sentSeconds:sentSamples/16000,reconnections,usageReports});
-  let delayed=false,watchdog,stopTask,closed=false,finishing=false,failureSent=false,lastText=performance.now(),lastVoice=0,firstFrame=0;
+  let delayed=false,watchdog,stopTask,closed=false,finishing=false,failureSent=false,lastText=now(),lastVoice=0,firstFrame=0;
   const fail=message=>{if(closed||finishing||failureSent)return;failureSent=true;for(const c of channels)c.assembler.flush();report();onError(new Error(message));};
   const abort=()=>{report();closed=true;cancelWatch(watchdog);for(const cancel of setupCancels)cancel();setupCancels.clear();for(const c of channels){clearTimeout(c.renewTimer);c.assembler.dispose();c.buffer.length=0;c.socket?.close();}};
   const timed=record=>({...record,liveFirstSourceStreamMs:Math.round(record.startedAt-firstFrame),liveFirstTranslationStreamMs:record.liveFirstTranslationMs===undefined?undefined:Math.round(record.startedAt-firstFrame+record.liveFirstTranslationMs),liveLastVoiceStreamMs:lastVoice?Math.round(lastVoice-firstFrame):undefined});
@@ -23,7 +23,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
     if(!response.ok)throw new Error(credential.error||'Google 음성 연결을 시작하지 못했어요.');
     if(closed)throw new Error('음성 연결이 취소됐어요.');
     const socket=new Socket(`${WS_ENDPOINT}?access_token=${encodeURIComponent(credential.token)}`);
-    channel.socket=socket; channel.connectedAt=performance.now();
+    channel.socket=socket; channel.connectedAt=now();
     await new Promise((resolve,reject)=>{
       let ready=false;
       const cancelSetup=()=>{clearTimeout(timer);setupCancels.delete(cancelSetup);reject(new Error('음성 연결이 취소됐어요.'));};
@@ -40,7 +40,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
           if(message.error){setupFailure();return;}
           if(message.sessionResumptionUpdate){const u=message.sessionResumptionUpdate;channel.canResume=Boolean(u.resumable&&u.newHandle);if(channel.canResume)channel.resumeHandle=u.newHandle;if(channel.renewRequested&&channel.canResume)void renew(channel);}
           if(message.usageMetadata){usageReports++;report();}
-          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=performance.now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();if(delayed){delayed=false;onStatus('');}}}
+          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();if(delayed){delayed=false;onStatus('');}}}
           if(message.goAway){channel.renewRequested=true;const ms=Math.max(1000,(parseFloat(message.goAway.timeLeft)||20)*1000-2000);clearTimeout(channel.renewTimer);channel.renewTimer=setTimeout(()=>void renew(channel,!channel.canResume),ms);if(channel.canResume)void renew(channel);else if(channel.assembler.idle)void renew(channel,true);}
         }catch{setupFailure();}
       });
@@ -90,8 +90,9 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
   },800);
   watchdog=scheduleWatch(()=>{
     report();if(finishing||closed)return;
-    for(const channel of channels)if(performance.now()-channel.connectedAt>rotateAfterMs && channel.assembler.idle && performance.now()-lastVoice>1500)void renew(channel,true);
+    for(const channel of channels)if(now()-channel.connectedAt>rotateAfterMs && channel.assembler.idle && now()-lastVoice>1500)void renew(channel,true);
     const action=health.check();
+    if(delayed && now()-lastVoice>3000){delayed=false;onStatus('');}
     if(action==='finalize'){delayed=true;onStatus('받아쓰기 응답을 기다리고 있어요. 음성 연결을 확인하고 있습니다.');}
     if(action==='recover')for(const channel of channels)void renew(channel,!channel.canResume);
   },1000);

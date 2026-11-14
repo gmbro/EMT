@@ -188,7 +188,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     const current = historyRef.current, index = current.records.findIndex(row => row.id === id);
     if (index < 0) return;
     const previous = current.records[index], record = { ...previous, ...update }, records = [...current.records];
-    if(previous.speakerManual)record.speakerId=previous.speakerId;
+    if(previous.speakerManual){record.speakerId=previous.speakerId;record.speakerManual=true;}
     records[index] = record;
     const delta = record.original === previous.original && record.translation === previous.translation ? 0 : captionLength(record) - captionLength(previous);
     publishHistory({ ...current, records, characterCount: current.characterCount + delta });

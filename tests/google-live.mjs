@@ -95,3 +95,14 @@ test('quiet pauses keep their audio frames and never terminate a live audio stre
   assert.ok(!messages.some(m=>m.realtimeInput?.audioStreamEnd));
  }finally{await live.stop({flush:false});}
 });
+
+test('a delay notice clears when speech stops even if no transcript arrives',async()=>{
+ Socket.instances=[];let time=0,tick;const statuses=[];
+ const live=await createGoogleLive({fetchImpl:tokenFetch,Socket,onUpdate:()=>{},onFinal:()=>{},onError:assert.fail,onStatus:s=>statuses.push(s),now:()=>time,scheduleWatch:fn=>{tick=fn;return 1;},cancelWatch:()=>{}});
+ try{
+  live.push(new Float32Array(1600).fill(.1));time=12000;live.push(new Float32Array(1600).fill(.1));tick();
+  assert.ok(statuses.at(-1).includes('기다리고'));
+  time+=4000;tick();assert.equal(statuses.at(-1),'');
+  time+=30000;tick();assert.equal(Socket.instances.length,1);
+ }finally{await live.stop({flush:false});}
+});
