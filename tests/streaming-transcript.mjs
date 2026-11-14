@@ -55,3 +55,10 @@ test('foreign revisions retract a bilingual preview and never become final capti
  stream.flush();
  assert.deepEqual(finals.map(text=>text.replace(/\s+/g,' ')),['Hello everyone.']);
 });
+
+test('one-word English response before Korean survives without terminal punctuation',()=>{
+ const rows=[];
+ const stream=createStreamingTranscript({onUpdate:()=>{},onFinal:row=>rows.push(row)});
+ stream.receive({inputTranscription:{text:'Okay 네 확인했습니다.'}});
+ assert.deepEqual(rows.map(row=>[row.language,row.original]),[['en-US','Okay'],['ko-KR','네 확인했습니다.']]);
+});

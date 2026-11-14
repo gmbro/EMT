@@ -327,7 +327,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   function queueTranslation(record, currentEngine = engine.current, session = epoch.current) {
     if (record.sourcePending) { updateRecord(record.id, { status: 'error', error: record.incomplete?'미완성 발화예요. 원문을 수정해 문장을 완성한 뒤 다시 번역할 수 있어요.':'인식 중 연결이 끝났어요. 이 원문은 확정되지 않았습니다.' }); return translationQueue.current; }
     if(displayOptions.current.transcribeOnly){updateRecord(record.id,{translation:'',status:'complete',error:'',transcriptOnly:true});if(record.language==='en-US')scheduleReplies(record.original);return translationQueue.current;}
-    const english=englishForTranslation(record.original,record.language);
+    const english=record.language==='ko-KR'?'':englishForTranslation(record.original,record.language);
     if (!english) { updateRecord(record.id, { translation: '', status: 'complete', error: '' }); return translationQueue.current; }
     const job = record.id;
     if (translationJobs.current.has(job)) return translationQueue.current;
@@ -530,7 +530,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
       do {label=next<26?String.fromCharCode(65+next):String(next+1);next++;} while(used.has(label));
       used.add(label);return label;
     }
-    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,diarize:separateSpeakers,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
+    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,diarize:separateSpeakers,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage==='en-US'&&!LOCAL_QWEN?'auto':inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
         onDiscard: id => {
           if (session !== epoch.current || !alive.current) return;
           livePreviewRunner.current?.invalidate();

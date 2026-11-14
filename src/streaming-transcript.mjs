@@ -18,8 +18,8 @@ function meaningBoundary(text,language) {
  if(language==='auto'){
    // A standalone English phrase followed by Korean can finish without punctuation.
    const transition=/\s+(?=[가-힣])/u.exec(text);
-   if(transition && /^[^가-힣]*[a-z](?:[^가-힣]*)$/i.test(text.slice(0,transition.index)) &&
-      (text.slice(0,transition.index).match(/[a-z]+/gi)||[]).length>=2){
+   const prefix=transition && text.slice(0,transition.index).trim();
+   if(prefix && !/[가-힣]/u.test(prefix) && ((prefix.match(/[a-z]+/gi)||[]).length>=2 || /^(?:yes|no|okay|ok|thanks|sure|right)$/i.test(prefix))){
      sentence=sentence?Math.min(sentence,transition.index):transition.index;
    }
  }
