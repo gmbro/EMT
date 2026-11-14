@@ -100,14 +100,14 @@ test('a supported prerequisite is not incorrectly blocked as a future promise',a
  assert.equal(validateReplyOptions([{ko:'보안 검토가 완료되어야 진행할 수 있습니다.',en:'The security review must be completed before implementation.'}]).length,1);
 });
 
-test('growing multi-sentence previews reuse completed sentences instead of retranslating the prefix',async()=>{
+test('multi-sentence previews use one request and the identical final reuses its translation',async()=>{
  const sent=[];
  await mockFetch(async(_url,options)=>{sent.push(JSON.parse(options.body).text);return response([{type:'delta',text:'번역'},{type:'done'}]);},async()=>{
    const engine=new MeetingEngine();engine.translationKinds.set('en-US','test');
    await engine.translateDraft('We have not approved. Please review','en-US',{});
    await engine.translateDraft('We have not approved. Please review the contract.','en-US',{});
    await engine.translate('We have not approved. Please review the contract.','en-US',{});
-   assert.deepEqual(sent,['We have not approved.','Please review','Please review the contract.']);engine.destroy();
+   assert.deepEqual(sent,['We have not approved. Please review','We have not approved. Please review the contract.']);engine.destroy();
  });
 });
 

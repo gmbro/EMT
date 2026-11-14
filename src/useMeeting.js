@@ -507,7 +507,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
         const row=historyRef.current.records.find(r=>r.id===task.id);
         if(!row?.sourcePending)return;
         const previous=previewTasks.current.get(task.id);
-        if(previous?.glossary===task.glossary && (canPublishPreview(task.text,previous.text)||!needsPreview(previous.text,task.text)))return;
+        if(previous?.glossary===task.glossary && !needsPreview(previous.text,task.text))return;
         const controller=new AbortController();livePreviewAbort.current=controller;
         const promise=task.engine.translateDraft(task.text,'en-US',{signal:controller.signal,onText:emit,context:task.context,glossary:task.glossary});
         previewTasks.current.set(task.id,{text:task.text,glossary:task.glossary,promise});

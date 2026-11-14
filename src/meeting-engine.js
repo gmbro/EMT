@@ -101,12 +101,8 @@ export class MeetingEngine {
   }
   async translateDraft(text, language, { onText, signal, context, glossary } = {}) {
     if (this.translationMode === 'cloud') {
-      const output=[];
-      for(const chunk of sentenceChunks(text).flatMap(part=>translationChunks(part,1200))){
-        const result=await this.cloudChunk(chunk,language,{onText:partial=>onText?.([...output,partial].join('\n')),signal,context,glossary,draft:true,timeoutMs:6000});
-        output.push(result.text);onText?.(output.join('\n'));
-      }
-      return output.join('\n');
+      const result=await this.cloudChunk(text,language,{onText,signal,context,glossary,draft:true,timeoutMs:6000});
+      return result.text;
     }
     const translator = this.nativeTranslators.get(language);
     if (!translator) return null;

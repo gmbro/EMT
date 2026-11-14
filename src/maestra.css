@@ -64,3 +64,5 @@
 .compact-guide>header{flex-wrap:wrap;gap:4px}
 .compact-guide header>div{flex-wrap:wrap}
 @media(max-width:760px){.fixed-controls{font-size:13.5px;overflow-x:auto}.fixed-controls>div{flex-shrink:0}}
+
+.turn-sheet .turn{border-bottom:0;padding-block:6px}
