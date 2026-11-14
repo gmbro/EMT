@@ -6,8 +6,8 @@ import {canPublishPreview,needsPreview,sentenceChunks,canStartPreview,canContinu
 test('a new utterance after minutes of silence gets its own response deadline',()=>{
   let time=0;const health=createSpeechHealth({now:()=>time});
   health.response();time=120000;health.voice();assert.equal(health.check(),null);
-  time+=11999;assert.equal(health.check(),null);time++;assert.equal(health.check(),'finalize');
-  assert.equal(health.check(),null);time+=12000;assert.equal(health.check(),'recover');
+  time+=11999;health.voice();assert.equal(health.check(),null);time++;health.voice();assert.equal(health.check(),'finalize');
+  assert.equal(health.check(),null);time+=12000;health.voice();assert.equal(health.check(),'recover');
   health.response();time+=100000;assert.equal(health.check(),null);
 });
 test('continuous transcription resets the watchdog and silence alone never arms it',()=>{
@@ -53,4 +53,9 @@ test('early preview starts on a phrase and finals retain only exact text and glo
  assert.equal(canContinueFinalPreview('We do not approve.','We approve.','',''),false);
  assert.equal(canContinueFinalPreview('Please confirm.','Please confirm.','new','old'),false);
  assert.equal(canContinueFinalPreview('Please confirm.','Please confirm.','',''),true);
+});
+
+test('a short sound followed by silence cannot trigger a delayed warning or reconnection',()=>{
+ let time=0;const health=createSpeechHealth({now:()=>time});
+ health.voice();time=12000;assert.equal(health.check(),null);time=24000;assert.equal(health.check(),null);
 });

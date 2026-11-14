@@ -62,8 +62,8 @@ test('a stalled stream is nudged then resumed without treating idle time as fail
  const live=await createGoogleLive({fetchImpl:tokenFetch,Socket,onUpdate:()=>{},onFinal:()=>{},onError:e=>errors.push(e),onStatus:s=>statuses.push(s),now:()=>time,scheduleWatch:fn=>{tick=fn;return 1;},cancelWatch:()=>{}});
  try{
   time=120000;live.push(new Float32Array(1600).fill(.1));tick();assert.equal(errors.length,0);assert.equal(Socket.instances.length,1);
-  time+=12000;tick();assert.ok(Socket.instances[0].sent.some(m=>m.realtimeInput?.audioStreamEnd));
-  time+=12000;tick();await new Promise(r=>setTimeout(r,5));assert.equal(Socket.instances.length,2);assert.equal(errors.length,0);assert.ok(statuses.some(s=>s.includes('복구')));
+  time+=12000;live.push(new Float32Array(1600).fill(.1));tick();assert.ok(!Socket.instances[0].sent.some(m=>m.realtimeInput?.audioStreamEnd));
+  time+=12000;live.push(new Float32Array(1600).fill(.1));tick();await new Promise(r=>setTimeout(r,5));assert.equal(Socket.instances.length,2);assert.equal(errors.length,0);assert.ok(statuses.some(s=>s.includes('복구')));
  }finally{await live.stop({flush:false});}
 });
 test('turn completion commits an authoritative tail without punctuation',async()=>{
@@ -83,5 +83,15 @@ test('GoAway during a long unfinished phrase renews without a resume handle befo
   assert.equal(finals[0].original,'We have not approved the contract');
   assert.ok(Socket.instances[1].sent.some(m=>m.realtimeInput?.audio));
   assert.ok(statuses.some(s=>s.includes('복구')));
+ }finally{await live.stop({flush:false});}
+});
+
+test('quiet pauses keep their audio frames and never terminate a live audio stream',async()=>{
+ Socket.instances=[];const live=await createGoogleLive({fetchImpl:tokenFetch,Socket,onUpdate:()=>{},onFinal:()=>{},onError:assert.fail});
+ try{
+  live.push(new Float32Array(1600).fill(.05));live.push(new Float32Array(32000));live.push(new Float32Array(1600).fill(.05));
+  const messages=Socket.instances[0].sent;
+  assert.equal(messages.filter(m=>m.realtimeInput?.audio).length,44);
+  assert.ok(!messages.some(m=>m.realtimeInput?.audioStreamEnd));
  }finally{await live.stop({flush:false});}
 });

@@ -1,4 +1,4 @@
-import { createSpeechHealth, createSilenceGate } from './speech-health.mjs';
+import { createSpeechHealth } from './speech-health.mjs';
 import { recordAudioUsage } from './request-metrics.mjs';
 import { createStreamingTranscript } from './streaming-transcript.mjs';
 import { createPCMFramer, pcm16Base64 } from './live-captions.mjs';
@@ -40,7 +40,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
           if(message.error){setupFailure();return;}
           if(message.sessionResumptionUpdate){const u=message.sessionResumptionUpdate;channel.canResume=Boolean(u.resumable&&u.newHandle);if(channel.canResume)channel.resumeHandle=u.newHandle;if(channel.renewRequested&&channel.canResume)void renew(channel);}
           if(message.usageMetadata){usageReports++;report();}
-          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=performance.now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();}}
+          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=performance.now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();if(delayed){delayed=false;onStatus('');}}}
           if(message.goAway){channel.renewRequested=true;const ms=Math.max(1000,(parseFloat(message.goAway.timeLeft)||20)*1000-2000);clearTimeout(channel.renewTimer);channel.renewTimer=setTimeout(()=>void renew(channel,!channel.canResume),ms);if(channel.canResume)void renew(channel);else if(channel.assembler.idle)void renew(channel,true);}
         }catch{setupFailure();}
       });
@@ -81,15 +81,18 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
     }
   };
   const endAudio=()=>{for(const c of channels){const message=JSON.stringify({realtimeInput:{audioStreamEnd:true}});if(c.reconnecting)c.buffer.push(message);else if(c.socket.readyState===1)c.socket.send(message);}};
-  const gate=createSilenceGate({send,end:endAudio});
-  // 50 ms packets reduce capture buffering; keep the same 1 s replay and
-  // 12 s reconnect capacities above. PCM duration (and audio billing) is unchanged.
-  const framer=createPCMFramer(pcm=>{capturedSamples+=pcm.length;const {voiced}=gate.push(pcm);if(voiced){lastVoice=performance.now();health.voice();}},800);
+  // Keep the PCM timeline continuous so server VAD sees natural pauses.
+  const framer=createPCMFramer(pcm=>{
+    capturedSamples+=pcm.length;
+    send(pcm);
+    const rms=Math.sqrt(pcm.reduce((sum,value)=>sum+value*value,0)/Math.max(1,pcm.length));
+    if(rms>=.003){lastVoice=now();health.voice();}
+  },800);
   watchdog=scheduleWatch(()=>{
     report();if(finishing||closed)return;
     for(const channel of channels)if(performance.now()-channel.connectedAt>rotateAfterMs && channel.assembler.idle && performance.now()-lastVoice>1500)void renew(channel,true);
     const action=health.check();
-    if(action==='finalize'){delayed=true;onStatus('음성 입력이 있지만 받아쓰기가 지연되고 있어요. 마지막 인식 '+new Date(Date.now()-(performance.now()-lastText)).toLocaleTimeString('ko-KR'));endAudio();}
+    if(action==='finalize'){delayed=true;onStatus('받아쓰기 응답을 기다리고 있어요. 음성 연결을 확인하고 있습니다.');}
     if(action==='recover')for(const channel of channels)void renew(channel,!channel.canResume);
   },1000);
   return {push:samples=>framer.push(samples),async stop({flush=true}={}){

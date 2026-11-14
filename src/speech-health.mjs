@@ -1,12 +1,13 @@
 // Silence is not a failed response. Start the deadline with new speech, not
 // with the last transcript (which may have arrived minutes ago).
 export function createSpeechHealth({ now = () => performance.now() } = {}) {
-  let awaiting = null, nudged = false;
+  let awaiting = null, nudged = false, lastVoice = null;
   return {
-    voice() { awaiting ??= now(); },
+    voice() { lastVoice = now(); awaiting ??= lastVoice; },
     response() { awaiting = null; nudged = false; },
     check() {
       if (awaiting === null) return null;
+      if (now() - lastVoice > 3000) { awaiting = null; nudged = false; return null; }
       const age = now() - awaiting;
       if (age >= 24000) { awaiting = now(); nudged = false; return 'recover'; }
       if (age >= 12000 && !nudged) { nudged = true; return 'finalize'; }
