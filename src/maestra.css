@@ -69,3 +69,26 @@
 
 .restore-panels{display:flex;flex-wrap:wrap;gap:8px;padding:8px 14px;border-bottom:1px solid #e3e9f1;flex-shrink:0}
 .maestra-app .restore-panels button{min-height:36px;padding:6px 12px;border:1px solid #b7cfee;border-radius:8px;background:#f1f7ff;color:#255887;font-size:14px}
+
+.assistance-dock.typed-dock{flex:0 0 var(--dock-height,28%);min-height:180px;max-height:45%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.assistance-dock.typed-dock.split-dock{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.typed-dock .compact-speech{border-right:1px solid #e3e9f1}
+.typed-dock .speech-pane{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);flex:1;min-height:0;padding:0!important}
+.typed-dock .speech-pane>.pane-heading{display:none}
+.typed-dock .speech-results{grid-column:1;grid-row:1;overflow:auto}
+.typed-dock .speech-form{grid-column:2;grid-row:1;padding:8px!important}
+.typed-dock .speech-form textarea{font-size:14px!important;min-height:45px!important;resize:none}
+.typed-dock .speech-form label,.typed-dock .speech-form-actions,.typed-dock .speech-form-actions button{font-size:12px!important}
+.typed-dock .speech-result{padding:4px 0!important}
+.typed-dock .speech-korean,.typed-dock .speech-english{font-size:14px!important}
+.restore-panels{border-top:1px solid #e3e9f1;border-bottom:0}
+@media(max-width:760px){
+ .assistance-dock.typed-dock{max-height:48%;min-height:190px}
+ .assistance-dock.typed-dock.split-dock{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);min-height:240px}
+ .typed-dock .compact-speech{border-right:0;border-bottom:1px solid #e3e9f1}
+ .typed-dock .compact-guide>header{font-size:13px}
+ .typed-dock .compact-guide header button{font-size:12px}
+}
+.typed-dock .speech-pane{overflow:auto}
+.typed-dock .speech-form{min-height:120px}
+@media(max-width:760px){.assistance-dock.typed-dock.split-dock{min-height:300px}}
