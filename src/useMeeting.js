@@ -511,11 +511,13 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
         const controller=new AbortController();livePreviewAbort.current=controller;
         const promise=task.engine.translateDraft(task.text,'en-US',{signal:controller.signal,onText:emit,context:task.context,glossary:task.glossary});
         previewTasks.current.set(task.id,{text:task.text,glossary:task.glossary,promise});
-        try{return await promise;}finally{if(livePreviewAbort.current===controller)livePreviewAbort.current=null;}
+        try{return await promise;}
+        catch(error){if(previewTasks.current.get(task.id)?.promise===promise)previewTasks.current.delete(task.id);throw error;}
+        finally{if(livePreviewAbort.current===controller)livePreviewAbort.current=null;}
       },
       publish:(text,task)=>{
         const row=historyRef.current.records.find(r=>r.id===task.id);
-        if(alive.current&&task.session===epoch.current&&row && (row.sourcePending ? canPublishPreview(row.original,task.text) : row.status==='translating'&&canContinueFinalPreview(row.original,task.text,glossaryRef.current,task.glossary))&&typeof text==='string')updateRecord(task.id,{translation:text,firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(performance.now()-row.captureStartedAt)});
+        if(alive.current&&task.session===epoch.current&&row && (row.sourcePending ? canPublishPreview(row.original,task.text) : row.status==='translating'&&glossaryRef.current===task.glossary&&canPublishPreview(row.original,task.text))&&typeof text==='string')updateRecord(task.id,{translation:text,firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(performance.now()-row.captureStartedAt)});
       },onError:()=>{},
     });
     livePreviewRunner.current.submit({id:record.id,text:record.original,context:stableContext(record),glossary:glossaryRef.current,engine:currentEngine,session});
@@ -541,7 +543,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
           if (session !== epoch.current || !alive.current) return;
           record={...record,sample:samplePreviewToken.current!==null};
           const previous=historyRef.current.records.find(row=>row.id===record.id);
-          if(previous?.language!==record.language || previous?.id!==record.id){livePreviewRunner.current?.invalidate();draftTranslator.current.clear();}
+          if(previous && previous.language!==record.language){livePreviewRunner.current?.invalidate();livePreviewAbort.current?.abort();draftTranslator.current.clear();}
           const requested=previewTasks.current.get(record.id);
           // Revisions (e.g. added negation) supersede an in-flight draft.
           // Suffix growth keeps its stream alive so continuous speech cannot
@@ -557,7 +559,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
         onFinal: record => {
           if (session !== epoch.current || !alive.current) return;
           const preview=previewTasks.current.get(record.id);
-          if(!preview || !canContinueFinalPreview(record.original,preview.text,glossaryRef.current,preview.glossary)){livePreviewAbort.current?.abort();livePreviewRunner.current?.invalidate();}
+          if(preview && (glossaryRef.current!==preview.glossary || !canPublishPreview(record.original,preview.text))){livePreviewAbort.current?.abort();livePreviewRunner.current?.invalidate();}
           record={...record,sample:samplePreviewToken.current!==null};
           const previous=historyRef.current.records.find(row=>row.id===record.id);
           updateRecord(record.id, { ...record, translation: record.language === 'ko-KR' ? '' : previous?.translation || '', status: record.language === 'ko-KR' ? 'complete' : 'translating' });
