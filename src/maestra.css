@@ -51,3 +51,16 @@
 .home-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}
 @media(max-width:1000px){.fixed-controls .footer-left .mini-brand{display:inline-flex;margin:0}.footer-left .mini-brand span{display:none}.fixed-controls .mini-brand svg{display:block}}
 @media(max-width:360px){.fixed-controls .footer-left .mini-brand+button{display:inline-flex}}
+
+.archive-home{flex:1;min-height:0;overflow:auto;padding:clamp(20px,5vw,64px)}
+.archive-content{position:relative;max-width:900px;margin:auto}
+.archive-content .section-heading{min-height:48px;padding-right:100px}
+.archive-content .new-note{position:absolute;right:0;top:0;background:#2376ef;color:white;padding:10px 18px;border-radius:8px;font-weight:600}
+.fixed-controls,.fixed-controls .mini-brand,.fixed-controls .saved-state{font-size:15px}
+.fixed-controls button{font-size:inherit}
+.compact-guide>header,.compact-guide header button,.dock-empty{font-size:15px}
+.maestra-app .compact-reply,.compact-reply strong{font-size:16.5px}
+.compact-reply small{font-size:12px}
+.compact-guide>header{flex-wrap:wrap;gap:4px}
+.compact-guide header>div{flex-wrap:wrap}
+@media(max-width:760px){.fixed-controls{font-size:13.5px;overflow-x:auto}.fixed-controls>div{flex-shrink:0}}

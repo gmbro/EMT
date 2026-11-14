@@ -39,7 +39,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
     return ()=>controller.abort();
   },[]);
   const displayOptions=useRef({transcribeOnly,guidesEnabled});displayOptions.current={transcribeOnly,guidesEnabled};
-  const [language, setLanguage] = useState('auto');
+  const [language, setLanguage] = useState('en-US');
   const [draftLanguage, setDraftLanguage] = useState('en-US');
   const [source, setSource] = useState('microphone');
   const [portable, setPortable] = useState(false);
