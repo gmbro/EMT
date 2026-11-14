@@ -21,7 +21,7 @@ import { createGoogleLive } from './google-live.js';
 
 export function useMeeting({transcribeOnly=false,guidesEnabled=true}={}) {
   const [availableProvider,setAvailableProvider]=useState(LOCAL_QWEN?'qwen':'pending');
-  const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')==='google';}catch{return false;}});
+  const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')!=='deepgram';}catch{return true;}});
   const [separateSpeakers,setSeparateSpeakers]=useState(false);
   const speechProvider=availableProvider==='deepgram' && preferGoogle ? 'google' : availableProvider;
   function chooseSpeechProvider(value){

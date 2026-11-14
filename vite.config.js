@@ -20,7 +20,7 @@ const fileDigests = sourceFiles.map(path => {
   return { path, sha256: createHash('sha256').update(body).digest('hex') };
 });
 const sourceHash = sourceDigest.digest('hex');
-const release = { buildId: sourceHash.slice(0, 12), sourceHash, files: fileDigests, builtAt: new Date().toISOString(), speech: process.env.DEEPGRAM_API_KEY?'deepgram-nova-3':'google-live-transcribe', translation: 'gemini-3.6-flash' };
+const release = { buildId: sourceHash.slice(0, 12), sourceHash, files: fileDigests, builtAt: new Date().toISOString(), speech: 'google-live-transcribe', translation: 'gemini-3.8-flash' };
 
 const localTranslation = () => {
   const getKey = () => {
