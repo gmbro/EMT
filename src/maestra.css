@@ -96,3 +96,23 @@
  .meeting-tools{flex:0 1 42%;min-height:0;border-left:0;border-top:1px solid #dee4eb}
 }
 .meeting-summary .summary-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;font-size:var(--caption-size);padding-top:10px;user-select:text}
+.pinned-translation{flex:none;padding:8px 18px;border-top:1px solid #cfdeef;background:#f5f9ff;color:#235d9f}
+.pinned-translation p{font-size:var(--caption-size);line-height:1.45;margin:3px 0;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.turn-sheet .follow-button{position:static;align-self:flex-end;margin:2px 12px}
+.meeting-tools{overflow:hidden;display:flex;flex-direction:column;gap:8px;padding:10px}
+.meeting-tools>.compact-speech,.meeting-tools>.compact-guide{margin:0;min-height:0;overflow:hidden;padding:10px;flex:1}
+.meeting-tools>.meeting-summary{flex:0 0 auto;max-height:18%}
+.meeting-tools .summary-text,.meeting-tools .compact-replies,.meeting-tools .compact-speech .speech-results,.meeting-tools .speech-pane{overflow:hidden}
+.meeting-tools .compact-replies{gap:5px;padding:5px 0}
+.meeting-tools .compact-reply{padding:5px 10px}
+.meeting-tools .compact-speech .speech-form textarea{min-height:40px!important;height:48px!important;resize:none}
+.meeting-tools .compact-speech .speech-form{padding:3px 0!important}
+.tool-tabs{display:none}
+.final-summary{white-space:pre-wrap;line-height:1.65;padding:12px 0;overflow-wrap:anywhere}
+.home-actions{flex-wrap:wrap}
+@media(max-height:820px),(max-width:760px){
+ .tool-tabs{display:flex;gap:6px;flex:none}
+ .tool-tabs button{padding:4px 8px;border:1px solid #cbd7e6;border-radius:5px}
+ .meeting-tools[data-tab=speech]>.compact-guide,.meeting-tools[data-tab=guide]>.compact-speech,.meeting-tools[data-tab=guide]>.meeting-summary,.meeting-tools[data-tab=summary]>.compact-speech,.meeting-tools[data-tab=summary]>.compact-guide:not(.meeting-summary){display:none}
+ .meeting-tools>.meeting-summary{flex:1;max-height:none}
+}

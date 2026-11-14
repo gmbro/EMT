@@ -53,6 +53,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const [language, setLanguage] = useState('en-US');
   const [draftLanguage, setDraftLanguage] = useState('en-US');
   const [source, setSource] = useState('microphone');
+  const captureSettings=useRef(null);
+  captureSettings.current={source,language};
   const [portable, setPortable] = useState(false);
   const [speechProfile, setSpeechProfile] = useState('fast');
   const [glossary, setGlossary] = useState('');
@@ -347,6 +349,13 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     stopTask.current = task;
     try { await task; }
     finally { if (stopTask.current === task) stopTask.current = null; if (alive.current) setStopping(false); }
+  }
+  async function finishRecording() {
+    await stopOwnVoice(false,{flush:true});
+    await stop();
+    await speechQueue.current;
+    await translationQueue.current;
+    return historyRef.current.records;
   }
   stopRef.current = stop;
 
@@ -803,7 +812,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     try{const sampleBuffer=await context.decodeAudioData(await response.arrayBuffer());await startOwnVoice({sampleBuffer});const current=ownVoice.current;if(current){await current.ended;await stopOwnVoice(false,{flush:true});await ownQueue.current;}}
     finally{await context.close();}
   }
-  async function suggestReplies(mode, {count=3,automatic=false,alternatives=false}={}) {
+  async function suggestReplies(mode, {count=2,automatic=false,alternatives=false}={}) {
     if(!readyRef.current||replyController.current)return;
     const sourceRow=historyRef.current.records.filter(r=>r.language==='en-US'&&!r.sourcePending).at(-1);
     const english=sourceRow?.original;
@@ -812,8 +821,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     lastGuideAt.current=Date.now();lastGuideText.current=english.trim().toLowerCase();
     try{
       const generated=await engine.current.suggest(translationContext(sourceRow.createdAt,english,true),mode,{sourceEnglish:english,glossary:glossaryRef.current,replyCount:count,signal:controller.signal});
-      const result=generated.map(reply=>({...reply,sourceId:sourceRow.id,sourceAt:sourceRow.createdAt}));
-      if(session===epoch.current&&alive.current){if(automatic&&repliesRef.current.length)setNewReplies(result);else{setReplies(alternatives?[...repliesRef.current.slice(0,1),...result.filter(r=>r.en!==repliesRef.current[0]?.en)].slice(0,3):result);setNewReplies(null);}}
+      const result=generated.slice(0,2).map(reply=>({...reply,sourceId:sourceRow.id,sourceAt:sourceRow.createdAt}));
+      if(session===epoch.current&&alive.current){if(automatic&&repliesRef.current.length)setNewReplies(result);else{setReplies(alternatives?[...repliesRef.current.slice(0,1),...result.filter(r=>r.en!==repliesRef.current[0]?.en)].slice(0,2):result);setNewReplies(null);}}
     }catch(failure){if(session===epoch.current&&failure.name!=='AbortError')setReplyError(failure.message);}
     finally{if(replyController.current===controller){replyController.current=null;if(alive.current)setReplyBusy(false);}}
   }
@@ -855,7 +864,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         speeches=old?speeches.map(row=>row.id===id?item:row):[...speeches,item];
       }
     }
-    return {...sessionMeta.current,updatedAt:new Date().toISOString(),purpose:purposeRef.current,glossary:glossaryRef.current,
+    return {...sessionMeta.current,captureSettings:captureSettings.current,updatedAt:new Date().toISOString(),purpose:purposeRef.current,glossary:glossaryRef.current,
       records:historyRef.current.records,replies:repliesRef.current,speeches};
   }
   async function finishCheckpoint(key,snapshot) {
@@ -883,7 +892,16 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         snapshot=JSON.parse(sessionStorage.getItem(key)||'null') || await store.current.readCheckpoint(key);
         if (!snapshot) throw new Error('임시 기록을 읽지 못했습니다. 다시 시도해 주세요.');
       }
-      await finishCheckpoint(key,snapshot);
+      if (save==='resume') {
+        const [restored]=loadMeetings({getItem:()=>JSON.stringify({version:1,sessions:[snapshot]})});
+        if (!restored) throw new Error('임시 기록을 읽지 못했습니다.');
+        baseline.current=archiveRef.current.find(item=>item.id===restored.id)||null;
+        restoreMeeting(restored);
+        setSource(snapshot.captureSettings?.source==='meeting-tab'?'meeting-tab':'microphone');
+        if (['en-US','ko-KR','auto'].includes(snapshot.captureSettings?.language)) setLanguage(snapshot.captureSettings.language);
+        checkpointKey.current=key;
+        lastCheckpoint.current=null;
+      } else await finishCheckpoint(key,snapshot);
       recoveryKey.current=null;setRecovery(null);
     } finally { setSessionBusy(false); }
   }
@@ -905,7 +923,10 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     if (archiveLoading || composeBusy || active.current || starting || preparing || sessionBusy || isBusy()) return;
     const selected = archiveRef.current.find(item => item.id === id); if (!selected) return;
     baseline.current=selected;
-    await clear(); selectSpeaker(''); sessionMeta.current = { id: selected.id, createdAt: selected.createdAt };
+    await clear(); selectSpeaker(''); restoreMeeting(selected);
+  }
+  function restoreMeeting(selected) {
+    sessionMeta.current = { id: selected.id, createdAt: selected.createdAt };
     setGlossary(selected.glossary||'');setMeetingPurpose(selected.purpose||'');mutateHistory(() => selected.records); setReplies(selected.replies || []); changeSpeeches(() => selected.speeches || []); setElapsed(0);
   }
   async function deleteMeeting(id) {
@@ -920,7 +941,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     finally { deletingSession.current = null; setSessionBusy(false); }
   }
 
-  return { hasUnsaved:hasWork, recovery, resolveRecovery, testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving:sessionBusy, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
+  return { finishRecording, hasUnsaved:hasWork, recovery, resolveRecovery, testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving:sessionBusy, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
     listening, starting, stopping, level, elapsed, interim, partial, draftSample, records: history.records, characterCount: history.characterCount,
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
