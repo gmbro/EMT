@@ -88,30 +88,41 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
         segmenter.push(pcm);
       } catch (error) { onError(error); }
     };
-    try {
-      await withDeadline(()=>context.audioWorklet.addModule(captureWorkletUrl),3000,'오디오 모듈 연결 시간 초과');
-      worklet = new AudioWorkletNode(context, 'habi-audio-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
-    } catch (error) {
-      if (!context.createScriptProcessor) throw error;
-      processor = context.createScriptProcessor(2048, 1, 1);
-      processor.onaudioprocess = event => receiveSamples(event.inputBuffer.getChannelData(0));
-    }
-    if (worklet) {
-      worklet.port.onmessage = ({ data }) => {
-        if (data?.type === 'flushed') { flushResolve?.(); return; }
-        if (data?.type === 'samples') receiveSamples(data.samples);
-      };
-      worklet.onprocessorerror = () => onError(new Error('기기 내 오디오 처리 중 오류가 발생했어요. 듣기를 다시 시작해 주세요.'));
-    }
     if (audioBuffer) {
       source = context.createBufferSource(); source.buffer = audioBuffer; source.onended = () => finishPlayback?.();
     } else source = context.createMediaStreamSource(stream);
     silentGain = context.createGain();
     silentGain.gain.value = 0;
-    const captureNode = worklet || processor;
-    source.connect(captureNode);
-    captureNode.connect(silentGain);
     silentGain.connect(context.destination);
+
+    // Capture immediately while the worklet loads. A suspended render graph can
+    // defer addModule in Chromium, so connect the fallback before awaiting it.
+    if (context.createScriptProcessor) {
+      processor = context.createScriptProcessor(1024, 1, 1);
+      processor.onaudioprocess = event => receiveSamples(event.inputBuffer.getChannelData(0));
+      source.connect(processor);
+      processor.connect(silentGain);
+    }
+    const installWorklet = async () => {
+      await context.audioWorklet.addModule(captureWorkletUrl);
+      if (finished || stopPromise) return;
+      worklet = new AudioWorkletNode(context, 'habi-audio-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+      worklet.port.onmessage = ({ data }) => {
+        if (data?.type === 'flushed') { flushResolve?.(); return; }
+        if (data?.type === 'samples') receiveSamples(data.samples);
+      };
+      worklet.onprocessorerror = () => onError(new Error('기기 내 오디오 처리 중 오류가 발생했어요. 듣기를 다시 시작해 주세요.'));
+      if (processor) {
+        processor.onaudioprocess = null;
+        source.disconnect(processor);
+        processor.disconnect();
+        processor = null;
+      }
+      source.connect(worklet);
+      worklet.connect(silentGain);
+    };
+    if (processor) void installWorklet().catch(() => {});
+    else await withDeadline(installWorklet,3000,'오디오 모듈 연결 시간 초과');
     for (const track of audioTracks) {
       track.addEventListener('ended', endHandler);
       track.addEventListener('mute', muteHandler);

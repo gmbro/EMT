@@ -640,14 +640,20 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     currentEngine.controller.signal.addEventListener('abort', abort, { once: true });
     pendingCapture.current = pending;
     let live, recorder;const buffered=[];captureClock.current=performance.now();let bufferedSamples=0;
+    const connecting=warmLive.current?.session===session
+      ? Promise.resolve(warmLive.current.live)
+      : createLiveSession(currentEngine,session,language,controller.signal);
+    warmLive.current=null;
+    // Observe failure immediately while audio capture starts in parallel.
+    void connecting.catch(()=>{});
     try {
       recorder=await createAudioCapture(stream,{audioBuffer,audioContext,onInputStatus:setError,onPCM:samples=>{if(live)live.push(samples);else{bufferedSamples+=samples.length;if(bufferedSamples>400000){controller.abort();throw new Error('음성 연결이 늦어져 시작을 중단했어요. 다시 시작해 주세요.');}buffered.push(samples.slice());}},onLevel:setLevel,onError:failure=>{setError(failure.message);controller.abort();void stopRef.current?.();},onEnded:()=>{if(!audioBuffer)setError('오디오 입력이 종료되었습니다. 장치를 확인하고 다시 연결해 주세요.');void stopRef.current?.();}});
-      if(warmLive.current?.session===session){live=warmLive.current.live;warmLive.current=null;}else live=await createLiveSession(currentEngine,session,language,controller.signal);
+      live=await connecting;
       if (controller.signal.aborted) throw new Error('음성 연결이 취소됐어요.');
       for(const pcm of buffered)live.push(pcm);buffered.length=0;
       if (pendingCapture.current === pending) pendingCapture.current = null;
       return { ended: recorder.ended, async stop(options) { try { await recorder.stop(options); await live.stop(options); } finally { currentEngine.controller.signal.removeEventListener('abort', abort); } } };
-    } catch (error) { if (pendingCapture.current === pending) pendingCapture.current = null; currentEngine.controller.signal.removeEventListener('abort', abort); await recorder?.stop({ flush: false }); await live?.stop({ flush: false }); for (const track of stream?.getTracks() || []) track.stop(); throw error; }
+    } catch (error) { controller.abort(); live ||= await connecting.catch(()=>null); if (pendingCapture.current === pending) pendingCapture.current = null; currentEngine.controller.signal.removeEventListener('abort', abort); await recorder?.stop({ flush: false }); await live?.stop({ flush: false }); for (const track of stream?.getTracks() || []) track.stop(); throw error; }
   }
 
   async function testSample(sampleLanguage = 'en-US') {
