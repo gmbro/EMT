@@ -12,7 +12,7 @@ const productionHeaders = Object.fromEntries(JSON.parse(readFileSync(new URL('./
 // Environment files and meeting records are deliberately excluded.
 const sourceRoot = fileURLToPath(new URL('./', import.meta.url));
 const sourceFiles = [...['src', 'api'].flatMap(directory => readdirSync(new URL(`./${directory}/`, import.meta.url), { recursive: true, withFileTypes: true })
-  .filter(entry => entry.isFile() && /\.(?:js|jsx|mjs|css|json)$/.test(entry.name)).map(entry => `${entry.parentPath}/${entry.name}`.slice(sourceRoot.length))), 'package.json', 'index.html', 'public/model-licenses.md', 'public/fonts/PretendardVariable-9599f12fd42f.woff2', 'public/fonts/OFL.txt', 'public/fonts/source.json', 'vite.config.js', 'vercel.json'].sort();
+  .filter(entry => entry.isFile() && /\.(?:js|jsx|mjs|css|json)$/.test(entry.name)).map(entry => `${entry.parentPath}/${entry.name}`.slice(sourceRoot.length))), 'package.json', 'index.html', 'public/startup.js', 'public/model-licenses.md', 'public/fonts/PretendardVariable-9599f12fd42f.woff2', 'public/fonts/OFL.txt', 'public/fonts/source.json', 'vite.config.js', 'vercel.json'].sort();
 const sourceDigest = createHash('sha256');
 const fileDigests = sourceFiles.map(path => {
   const body = readFileSync(new URL(`./${path}`, import.meta.url));

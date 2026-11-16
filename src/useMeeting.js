@@ -34,7 +34,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const [availableProvider,setAvailableProvider]=useState(LOCAL_QWEN?'qwen':'pending');
   const [preferGoogle,setPreferGoogle]=useState(()=>{try{return localStorage.getItem('emt-speech-provider')!=='deepgram';}catch{return true;}});
   const [separateSpeakers,setSeparateSpeakers]=useState(false);
-  const speechProvider=availableProvider==='deepgram' && preferGoogle ? 'google' : availableProvider;
+  const speechProvider=!LOCAL_QWEN && preferGoogle ? 'google' : availableProvider;
   function chooseSpeechProvider(value){
     if(availableProvider!=='deepgram' || active.current || preparingRef.current || starting || stopping)return;
     setPreferGoogle(value==='google');
@@ -44,10 +44,12 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   useEffect(()=>{
     if(LOCAL_QWEN)return;
     const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),5000);
+    let mounted=true;
     fetch('/api/live-token?provider',{signal:controller.signal}).then(r=>r.json())
       .then(data=>setAvailableProvider(data.provider==='deepgram'?'deepgram':'google'))
-      .catch(()=>{if(!controller.signal.aborted)setAvailableProvider('google');});
-    return ()=>controller.abort();
+      .catch(()=>{if(mounted)setAvailableProvider('google');}).finally(()=>clearTimeout(timer));
+    return ()=>{mounted=false;clearTimeout(timer);controller.abort();};
   },[]);
   const displayOptions=useRef({transcribeOnly,guidesEnabled});displayOptions.current={transcribeOnly,guidesEnabled};
   const [language, setLanguage] = useState('en-US');
@@ -81,7 +83,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const [replies, setReplies] = useState([]);
   const [replyError, setReplyError] = useState('');
   const repliesRef = useRef(replies); repliesRef.current = replies;
-  const [sessions, setSessions] = useState(() => { try { return loadMeetings(window.localStorage); } catch { return []; } });
+  const [sessions, setSessions] = useState([]);
   const archiveRef = useRef(sessions);
   const sessionMeta = useRef({ id: crypto.randomUUID(), createdAt: new Date().toISOString() });
   const [sessionBusy, setSessionBusy] = useState(false);
