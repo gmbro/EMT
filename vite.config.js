@@ -1,3 +1,4 @@
+import {retainDeploymentAssets} from './deployment-assets.mjs';
 import {qwenLocalPlugin} from './local/qwen/vite-plugin.mjs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -12,7 +13,7 @@ const productionHeaders = Object.fromEntries(JSON.parse(readFileSync(new URL('./
 // Environment files and meeting records are deliberately excluded.
 const sourceRoot = fileURLToPath(new URL('./', import.meta.url));
 const sourceFiles = [...['src', 'api'].flatMap(directory => readdirSync(new URL(`./${directory}/`, import.meta.url), { recursive: true, withFileTypes: true })
-  .filter(entry => entry.isFile() && /\.(?:js|jsx|mjs|css|json)$/.test(entry.name)).map(entry => `${entry.parentPath}/${entry.name}`.slice(sourceRoot.length))), 'package.json', 'index.html', 'public/startup.js', 'public/model-licenses.md', 'public/fonts/PretendardVariable-9599f12fd42f.woff2', 'public/fonts/OFL.txt', 'public/fonts/source.json', 'vite.config.js', 'vercel.json'].sort();
+  .filter(entry => entry.isFile() && /\.(?:js|jsx|mjs|css|json)$/.test(entry.name)).map(entry => `${entry.parentPath}/${entry.name}`.slice(sourceRoot.length))), 'package.json', 'index.html', 'public/startup.js', 'deployment-assets.mjs', 'public/model-licenses.md', 'public/fonts/PretendardVariable-9599f12fd42f.woff2', 'public/fonts/OFL.txt', 'public/fonts/source.json', 'vite.config.js', 'vercel.json'].sort();
 const sourceDigest = createHash('sha256');
 const fileDigests = sourceFiles.map(path => {
   const body = readFileSync(new URL(`./${path}`, import.meta.url));
@@ -50,7 +51,7 @@ const localTranslation = () => {
 };
 
 export default defineConfig(({command})=>({
-  plugins: [qwenLocalPlugin(command==='serve'&&process.env.EMT_LOCAL_QWEN==='1'), react(), localTranslation(), { name: 'release-metadata', generateBundle() {
+  plugins: [qwenLocalPlugin(command==='serve'&&process.env.EMT_LOCAL_QWEN==='1'), react(), localTranslation(), retainDeploymentAssets(), { name: 'release-metadata', generateBundle() {
     this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify(release) });
   } }],
   define: { __LOCAL_QWEN__: JSON.stringify(command==='serve'&&process.env.EMT_LOCAL_QWEN==='1'), __BUILD_ID__: JSON.stringify(release.buildId) },
