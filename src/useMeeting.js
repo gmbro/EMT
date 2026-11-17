@@ -412,8 +412,6 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         updateRecord(record.id, { translation: result.text, status: 'complete', error: '', milliseconds,
           segmentReadyAt:queuedAt,translationRequestAt:started,translationCompletedAt:performance.now(),translationMilliseconds: Math.round(performance.now() - started), waitMilliseconds: Math.round(started - queuedAt) });
         setPhase(`최근 문장 처리 ${(milliseconds / 1000).toFixed(1)}초 · ${record.sample ? '예제 음성' : 'Gemini 통역'}`);
-        const lastEnglish = record.language === 'en-US' ? record.original : historyRef.current.records.filter(row => row.language === 'en-US').at(-1)?.original;
-        if (lastEnglish) scheduleReplies(lastEnglish);
       } catch (failure) {
         if (session !== epoch.current || !alive.current) return;
         if(valid() && failure.name!=='AbortError')updateRecord(record.id, { status: 'error', error: failure.message, errorCode:failure.code });
