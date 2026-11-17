@@ -15,7 +15,8 @@ import { translateCloud } from './cloud-translation.mjs';
 import { createDraftTranslator } from './draft-translator.mjs';
 import { createTaskPool } from './task-pool.mjs';
 import { translationChunks } from './translation-chunks.mjs';
-import { meetingContext, isGuideMoment } from './meeting-context.mjs';
+import { createReplyScheduler } from './reply-scheduler.mjs';
+import { meetingContext } from './meeting-context.mjs';
 import { usageSummary, subscribeUsage } from './request-metrics.mjs';
 import { createGoogleLive } from './google-live.js';
 
@@ -93,6 +94,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const [speeches, setSpeeches] = useState([]), [composeBusy, setComposeBusy] = useState(false);
   const speechesRef = useRef(speeches), composer = useRef(null); speechesRef.current = speeches;
   function changeSpeeches(update) { const next = update(speechesRef.current); speechesRef.current = next; setSpeeches(next); revision.current++; }
+  const previousGuidesEnabled=useRef(guidesEnabled);
   const replyRunner = useRef(null), replyController = useRef(null), lastGuideAt = useRef(0), lastGuideText = useRef('');
   const [newReplies,setNewReplies] = useState(null), [meetingPurpose,setMeetingPurpose] = useState('');
   const purposeRef=useRef('');purposeRef.current=meetingPurpose;
@@ -381,7 +383,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
 
   function queueTranslation(record, currentEngine = engine.current, session = epoch.current) {
     if (record.sourcePending) { updateRecord(record.id, { status: 'error', error: record.incomplete?'미완성 발화예요. 원문을 수정해 문장을 완성한 뒤 다시 번역할 수 있어요.':'인식 중 연결이 끝났어요. 이 원문은 확정되지 않았습니다.' }); return translationQueue.current; }
-    if(displayOptions.current.transcribeOnly){updateRecord(record.id,{translation:'',status:'complete',error:'',transcriptOnly:true});if(record.language==='en-US')scheduleReplies(record.original);return translationQueue.current;}
+    if(record.language==='en-US')scheduleReplies(record.original, record.id);
+    if(displayOptions.current.transcribeOnly){updateRecord(record.id,{translation:'',status:'complete',error:'',transcriptOnly:true});return translationQueue.current;}
     const english=record.language==='ko-KR'?'':englishForTranslation(record.original,record.language);
     if (!english) { updateRecord(record.id, { translation: '', status: 'complete', error: '' }); return translationQueue.current; }
     const job = record.id;
@@ -830,27 +833,48 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     try{const sampleBuffer=await context.decodeAudioData(await response.arrayBuffer());await startOwnVoice({sampleBuffer});const current=ownVoice.current;if(current){await current.ended;await stopOwnVoice(false,{flush:true});await ownQueue.current;}}
     finally{await context.close();}
   }
-  async function suggestReplies(mode, {count=2,automatic=false,alternatives=false}={}) {
+  async function suggestReplies(mode, {count=2,automatic=false,alternatives=false,sourceId}={}) {
     if(!readyRef.current||replyController.current)return;
-    const sourceRow=historyRef.current.records.filter(r=>r.language==='en-US'&&!r.sourcePending).at(-1);
+    const sourceRow=sourceId
+      ? historyRef.current.records.find(row=>row.id===sourceId&&row.language==='en-US'&&!row.sourcePending)
+      : historyRef.current.records.filter(row=>row.language==='en-US'&&!row.sourcePending).at(-1);
     const english=sourceRow?.original;
-    if(!english)return;
+    if(!english){if(!automatic)setReplyError('확정된 영어 발언이 있어야 답변 가이드를 만들 수 있어요.');return;}
     const session=epoch.current,controller=new AbortController();replyController.current=controller;setReplyBusy(true);setReplyError('');
-    lastGuideAt.current=Date.now();lastGuideText.current=english.trim().toLowerCase();
+    lastGuideAt.current=Date.now();
     try{
       const generated=await engine.current.suggest(translationContext(sourceRow.createdAt,english,true),mode,{sourceEnglish:english,glossary:glossaryRef.current,replyCount:count,signal:controller.signal});
       const result=generated.slice(0,2).map(reply=>({...reply,sourceId:sourceRow.id,sourceAt:sourceRow.createdAt}));
-      if(session===epoch.current&&alive.current){if(automatic&&repliesRef.current.length)setNewReplies(result);else{setReplies(alternatives?[...repliesRef.current.slice(0,1),...result.filter(r=>r.en!==repliesRef.current[0]?.en)].slice(0,2):result);setNewReplies(null);}}
+      if(session===epoch.current&&alive.current){
+        lastGuideText.current=english.trim().toLowerCase();
+        if(automatic&&!displayOptions.current.guidesEnabled)return;
+        setReplies(alternatives?[...repliesRef.current.slice(0,1),...result.filter(r=>r.en!==repliesRef.current[0]?.en)].slice(0,2):result);
+        setNewReplies(null);
+      }
     }catch(failure){if(session===epoch.current&&failure.name!=='AbortError')setReplyError(failure.message);}
     finally{if(replyController.current===controller){replyController.current=null;if(alive.current)setReplyBusy(false);}}
   }
-  function scheduleReplies(english) {
+  function scheduleReplies(english, sourceId) {
     if(!displayOptions.current.guidesEnabled)return;
-    if(translationJobs.current.size>2||!isGuideMoment(english)||english.trim().toLowerCase()===lastGuideText.current||Date.now()-lastGuideAt.current<(/[?？]/.test(english)?12000:30000))return;
-    if(!replyRunner.current)replyRunner.current=createLatestTaskRunner({delay:900,canRun:()=>translationJobs.current.size===0&&!composer.current&&!replyController.current,
-      run:()=>displayOptions.current.guidesEnabled&&Date.now()-lastGuideAt.current>=12000?suggestReplies('비즈니스',{automatic:true}):undefined,publish:()=>{}});
-    replyRunner.current.submit({english});
+    const source = sourceId
+      ? historyRef.current.records.find(row=>row.id===sourceId)
+      : historyRef.current.records.findLast(row=>row.language==='en-US'&&!row.sourcePending&&row.original===english);
+    if(!source)return;
+    replyRunner.current ||= createReplyScheduler({
+      canGenerate:()=>displayOptions.current.guidesEnabled&&readyRef.current&&!composer.current&&!replyController.current&&!clearing.current,
+      lastRequest:()=>({at:lastGuideAt.current,text:lastGuideText.current}),
+      generate:turn=>suggestReplies('비즈니스',{automatic:true,sourceId:turn.id}),
+    });
+    replyRunner.current.submit({id:source.id,original:english});
   }
+  useEffect(()=>{
+    const enabledNow=guidesEnabled&&!previousGuidesEnabled.current;
+    previousGuidesEnabled.current=guidesEnabled;
+    if(!guidesEnabled){replyRunner.current?.invalidate();return;}
+    if(!enabledNow||!readyRef.current)return;
+    const source=historyRef.current.records.findLast(row=>row.language==='en-US'&&!row.sourcePending);
+    if(source)scheduleReplies(source.original,source.id);
+  },[guidesEnabled]);
   function acceptNewReplies(){if(newReplies){setReplies(newReplies);setNewReplies(null);}}
   function hasWork() {
     if (clearing.current || recoveryKey.current) return false;

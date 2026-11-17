@@ -14,3 +14,5 @@ public/runtime/
 .qwen-models/
 __pycache__/
 *.pyc
+
+node_modules 2/

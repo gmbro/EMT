@@ -15,3 +15,5 @@ scripts
 .venv-qwen
 .qwen-models
 local/qwen/worker.py
+
+node_modules 2/

@@ -15,6 +15,9 @@ export function meetingContext(records, { before = Infinity, text = '', guide = 
   }
   return [guide && purpose ? `User's stated meeting purpose: ${purpose.slice(0,300)}` : '', ...selected.sort((a,b)=>a.row.createdAt-b.row.createdAt).map(r=>r.value)].filter(Boolean).join('\n');
 }
+export function isGuideQuestion(text) {
+  return /[?？]|(?:^|[.!]\s+)(?:(?:please\s+)?(?:can|could|would|will)\s+you\b|(?:what|when|where|why|how|which|who)\b|(?:do|does|did|is|are|should|may)\s+(?:you|we|it|this|that|the)\b)/i.test(text);
+}
 export function isGuideMoment(text) {
-  return /[?？]|\b(?:decision|approve|approval|concern|risk|next steps?|deadline|budget|scope|however|proposal|recommend|agree)\b/i.test(text);
+  return isGuideQuestion(text) || /\b(?:decision|approve|approval|concern|risk|next steps?|deadline|budget|scope|however|proposal|recommend|agree)\b/i.test(text);
 }
