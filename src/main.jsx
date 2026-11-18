@@ -8,6 +8,7 @@ import './styles.css';
 import './maestra.css';
 import {meetingSummary} from './meeting-summary.mjs';
 import {meetingExport} from './meeting-export.mjs';
+import {createTranscriptView,transcriptMountWindow,prependTranscriptWindow} from './transcript-view.mjs';
 
 
 const languageName = language => language === 'ko-KR' ? '한국어' : 'English';
@@ -62,12 +63,15 @@ function SpeechComposer({ meeting, copy, active, readingSize, text,setText,editi
 }
 
 function MeetingHistory({ meeting, locked, onDelete }) {
+  const groups = React.useMemo(()=>{
   const groups = new Map();
   for (const session of meeting.sessions) {
     const date = new Date(session.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
     if (!groups.has(date)) groups.set(date, []);
     groups.get(date).push(session);
   }
+  return groups;
+  },[meeting.sessions]);
   return <section className="meeting-history" aria-labelledby="history-heading"><div className="section-heading"><div><CalendarDays size={19}/><h2 id="history-heading">회의 기록</h2><span>{meeting.sessions.length}개</span></div></div>
     {meeting.storageError && <p className="session-error" role="alert">{meeting.storageError}</p>}
     {meeting.archiveLoading && <p role="status">회의 기록을 불러오는 중…</p>}
@@ -96,50 +100,105 @@ function SpeakerEditor({rows,meeting,onClose}){
  <button className="primary-button">적용</button></form></Dialog>;
 }
 
-function LiveTranscript({meeting,mode,size,copy,edit,search,onEnableTranslation}){
- const area=useRef(null), [follow,setFollow]=useState(true), baseline=useRef(null);
+const TranscriptTurn=React.memo(function TranscriptTurn({speaker,rows,detected,focused,ready,onEdit,onRetry,onSpeakerRows,onFocus}){
+ return <article className="turn" data-language={rows[0].language} data-transcript-id={rows[0].id}>
+ {detected&&<><small>{speaker && '화자 '+speaker+' · '} {new Date(rows[0].createdAt).toLocaleTimeString('ko-KR')}</small> <button className="speaker-edit" onClick={()=>onSpeakerRows(rows)}>화자 수정</button> {speaker&&focused!==speaker&&<button className="speaker-edit" onClick={()=>onFocus(speaker)}>이 화자만 보기</button>}</>}
+ <small>{rows[0].language==='ko-KR'?'한국어 직접 전사 · 새 발언':'영어 원문'}</small>
+ <p lang={rows[0].language}>{rows.map(r=><span key={r.id} className={r.sourcePending?'pending-text':''} onDoubleClick={()=>{if(!workingRecord(r)&&ready)onEdit({...r});}}>{r.original} {r.incomplete&&' [인식 미완료]'}{r.userEdited&&' [원문 수정됨]'}</span>)}</p>
+ {rows[0].language!=='ko-KR'&&rows.some(r=>r.translation||r.status==='error')&&<><small className="turn-translation">한국어 번역</small><p lang="ko" className="turn-translation">{rows.map(r=><span key={r.id} className={r.status==='complete'?'':'pending-text'}>{r.translation} {r.status==='error'&&<button onClick={()=>onRetry(r.id)}>다시 번역</button>}</span>)}</p></>}
+ </article>;
+});
+
+const LiveTranscript=React.memo(function LiveTranscript({meeting,mode,size,copy,edit,search,onEnableTranslation}){
+ const area=useRef(null), [follow,setFollow]=useState(true), baseline=useRef(null),followFrame=useRef(null),userScrolling=useRef(0);
  const [speakerRows,setSpeakerRows]=useState(null);
  const [focused,setFocused]=useState('');
  const detected=meeting.speechProvider==='deepgram' && meeting.separateSpeakers;
  const speakers=React.useMemo(()=>Array.from(new Set(meeting.records.map(row=>row.speakerId).filter(Boolean))),[meeting.records]);
  const visible=React.useMemo(()=>focused?meeting.records.filter(row=>row.speakerId===focused):meeting.records,[meeting.records,focused]);
- function focusSpeaker(id){
+ const focusSpeaker=React.useCallback(id=>{
    setFocused(id);
    setFollow(true);
    if(id && mode==='transcript')onEnableTranslation();
- }
+ },[mode,onEnableTranslation]);
  const latestTranslation=visible.findLast(row=>row.translation?.trim())?.translation;
- const groups=React.useMemo(()=>{
-   const result=[];
-   for(const row of visible){
-     const last=result.at(-1);
-     if(last && !last.rows[0].translationBatch && !row.translationBatch && last.rows[0].language===row.language && (!detected || last.speaker===(row.speakerId||'')))last.rows.push(row);
-     else result.push({speaker:row.speakerId||'',rows:[row]});
-   }
-   const term=search.toLowerCase();
-   return result.filter(group=>group.rows.some(r=>(r.original+' '+(r.translation||'')).toLowerCase().includes(term)));
- },[visible,search,detected]);
- useLayoutEffect(()=>{if(follow&&area.current)area.current.scrollTop=area.current.scrollHeight;},[groups,follow,size]);
+ const view=useRef(null);
+ if(!view.current)view.current=createTranscriptView();
+ const deferredSearch=React.useDeferredValue(search);
+ const groups=React.useMemo(()=>view.current(visible,{detected,search:deferredSearch}),[visible,deferredSearch,detected]);
+ const viewKey=JSON.stringify([focused,deferredSearch,detected]);
+ const [mounted,setMounted]=useState(null),mountAnchor=useRef(null),followRef=useRef(follow);
+ followRef.current=follow;
+ const queueFollow=React.useCallback(()=>{
+   if(followFrame.current!==null)return;
+   followFrame.current=requestAnimationFrame(()=>{
+     followFrame.current=null;
+     const element=area.current;
+     if(followRef.current&&element)element.scrollTop=element.scrollHeight;
+   });
+ },[]);
+ const markUserScroll=()=>{
+   mountAnchor.current=null;userScrolling.current=performance.now()+600;
+   if(followFrame.current!==null){cancelAnimationFrame(followFrame.current);followFrame.current=null;}
+ };
+ const mountWindow=React.useMemo(()=>transcriptMountWindow(groups,mounted,viewKey),[groups,mounted,viewKey]);
+ const mountedGroups=React.useMemo(()=>groups.slice(mountWindow.start),[groups,mountWindow.start]);
+ useLayoutEffect(()=>{
+   if(mounted?.viewKey!==viewKey||mounted?.firstId!==mountWindow.firstId||mounted?.complete!==mountWindow.complete)setMounted(mountWindow);
+   const anchor=mountAnchor.current;mountAnchor.current=null;
+   const element=area.current;
+   if(!anchor||anchor.viewKey!==viewKey||followRef.current||!element)return;
+   if(anchor.node?.isConnected){
+     const offset=anchor.node.getBoundingClientRect().top-element.getBoundingClientRect().top;
+     element.scrollTop+=offset-anchor.offset;
+   }else element.scrollTop=anchor.top+element.scrollHeight-anchor.height;
+ },[mounted,mountWindow,viewKey]);
+ useEffect(()=>{
+   if(mountWindow.start===0)return;
+   let cancelled=false;
+   const reveal=()=>{
+     if(cancelled)return;
+     const element=area.current;
+     if(element&&!followRef.current){
+       const rect=element.getBoundingClientRect();
+       let node=null;
+       for(const offset of [12,32,64]){
+         const hit=document.elementFromPoint(rect.left+Math.min(36,rect.width/2),rect.top+Math.min(offset,rect.height/2));
+         const candidate=hit?.closest('[data-transcript-id]');
+         if(candidate&&element.contains(candidate)){node=candidate;break;}
+       }
+       mountAnchor.current={viewKey,node,offset:node?node.getBoundingClientRect().top-rect.top:0,top:element.scrollTop,height:element.scrollHeight};
+     }
+     setMounted(prependTranscriptWindow(groups,mountWindow));
+   };
+   const idle=window.requestIdleCallback?.(reveal,{timeout:100});
+   const timer=idle==null?setTimeout(reveal,0):null;
+   return()=>{cancelled=true;if(idle!=null)window.cancelIdleCallback?.(idle);if(timer!=null)clearTimeout(timer);};
+ },[groups,mountWindow.start,viewKey]);
+ useLayoutEffect(()=>{
+   if(!follow)return;
+   queueFollow();
+   return()=>{if(followFrame.current!==null){cancelAnimationFrame(followFrame.current);followFrame.current=null;}};
+ },[groups,follow,size,mountWindow.start,queueFollow]);
  return <section className="live-sheet turn-sheet" aria-label="실시간 회의 기록">
  <header className="turn-heading"><strong>실시간 회의 기록</strong><div className="translation-pacing" role="group" aria-label="번역 단위">
  {[["paragraph","문단 나누기"],["after-speech","다 말하고 번역하기"]].map(([value,label])=><button type="button" key={value} aria-pressed={meeting.translationPacing===value} onClick={()=>meeting.changeTranslationPacing(value)}>{label}</button>)}
  <small role="status">{mode==='transcript'?'번역을 켜면 적용됩니다':meeting.translationPacing==='after-speech'?'3초간 말이 없으면 번역':detected?'화자별 1문장 · 25초 기준':'기본 3문장 · 25초 기준'}</small></div>{(detected||speakers.length>0)&&<label>표시할 화자 <select aria-label="표시할 화자" value={focused} onChange={e=>focusSpeaker(e.target.value)}><option value="">전체 화자</option>{Array.from(new Set([...speakers,...(focused?[focused]:[])])).map(id=><option key={id} value={id}>화자 {id}만</option>)}</select></label>}<div>{mode==='transcript'&&<button onClick={onEnableTranslation}>번역 켜기</button>}<button onClick={()=>copy(visible.map(r=>r.original).join('\n'))}>원문 복사</button><button onClick={()=>copy(visible.map(r=>r.translation).filter(Boolean).join('\n'))}>번역 복사</button></div></header>
- <div className="turn-scroll" ref={area} role="region" aria-label="누적 원문과 번역" tabIndex={0} onScroll={e=>{
+ <div className="turn-scroll" ref={area} role="region" aria-label="누적 원문과 번역" tabIndex={0} onWheel={markUserScroll} onTouchMove={markUserScroll} onPointerDown={markUserScroll} onKeyDown={markUserScroll} onScroll={e=>{
    const el=e.currentTarget, near=el.scrollHeight-el.scrollTop-el.clientHeight<32;
-   if(follow&&!near)baseline.current=meeting.records;
-   setFollow(near);
+   // Progressive insertion and content-visibility can emit delayed scrolls
+   // after the follow frame. Only a recent user gesture may pause following.
+   if(follow&&!near&&performance.now()>userScrolling.current){queueFollow();return;}
+   if(follow&&!near){baseline.current=meeting.records;if(followFrame.current!==null){cancelAnimationFrame(followFrame.current);followFrame.current=null;}}
+   userScrolling.current=0;followRef.current=near;
+   if(near!==follow)setFollow(near);
  }}>
  {!groups.length&&<p>{search?'일치하는 기록이 없습니다':'첫 발언을 기다리고 있습니다.'}</p>}
- {groups.map(({speaker,rows})=><article className="turn" data-language={rows[0].language} key={rows[0].id}>
- {detected&&<><small>{speaker && '화자 '+speaker+' · '} {new Date(rows[0].createdAt).toLocaleTimeString('ko-KR')}</small> <button className="speaker-edit" onClick={()=>setSpeakerRows(rows)}>화자 수정</button> {speaker&&focused!==speaker&&<button className="speaker-edit" onClick={()=>focusSpeaker(speaker)}>이 화자만 보기</button>}</>}
- <small>{rows[0].language==='ko-KR'?'한국어 직접 전사 · 새 발언':'영어 원문'}</small>
- <p lang={rows[0].language}>{rows.map(r=><span key={r.id} className={r.sourcePending?'pending-text':''} onDoubleClick={()=>{if(!workingRecord(r)&&meeting.ready)edit({...r});}}>{r.original} {r.incomplete&&' [인식 미완료]'}{r.userEdited&&' [원문 수정됨]'}</span>)}</p>
- {rows[0].language!=='ko-KR'&&rows.some(r=>r.translation||r.status==='error')&&<><small className="turn-translation">한국어 번역</small><p lang="ko" className="turn-translation">{rows.map(r=><span key={r.id} className={r.status==='complete'?'':'pending-text'}>{r.translation} {r.status==='error'&&<button onClick={()=>meeting.retryRecord(r.id)}>다시 번역</button>}</span>)}</p></>}
- </article>)}</div>
+ {mountedGroups.map(({speaker,rows})=><TranscriptTurn key={rows[0].id} speaker={speaker} rows={rows} detected={detected} focused={focused} ready={meeting.ready} onEdit={edit} onRetry={meeting.retryRecord} onSpeakerRows={setSpeakerRows} onFocus={focusSpeaker}/>) }</div>
  {mode==='translate'&&latestTranslation&&<div className="pinned-translation"><small>최근 번역</small><p lang="ko">{latestTranslation}</p></div>}
  {speakerRows&&<SpeakerEditor rows={speakerRows} meeting={meeting} onClose={()=>setSpeakerRows(null)}/>}
  {!follow&&<button className="follow-button" onClick={()=>setFollow(true)}>{baseline.current!==meeting.records?'새 발언 있음 · ':''}실시간으로 이동</button>}</section>;
-}
+});
 
 function App(){
  const localModel=useLocalQwenReady(LOCAL_QWEN);
@@ -149,20 +208,25 @@ function App(){
  const [screen,setScreen]=useState('history'),[settings,setSettings]=useState(false),[editing,setEditing]=useState(null),[deleting,setDeleting]=useState(null),[notice,setNotice]=useState(''),[pendingStart,setPendingStart]=useState(false),[ended,setEnded]=useState(false),[search,setSearch]=useState('');
 
  const [homePrompt,setHomePrompt]=useState(false),[leaving,setLeaving]=useState(false),[homeError,setHomeError]=useState('');
+ const [openingHistory,setOpeningHistory]=useState(null),openingHistoryRef=useRef(false);
 
  useEffect(()=>{setDraft('');setEditingSpeech(null);},[meeting.activeSessionId]);
  const [size,setSize]=useState(()=>{try{const value=Number(localStorage.getItem('maestra-density-v4') || Math.round(Number(localStorage.getItem('maestra-density-v3'))*1.2));return [11,12,13,14,15,16,17,18,19,20].includes(value)?value:17;}catch{return 17;}});
  const [exportOpen,setExportOpen]=useState(false),[exportBusy,setExportBusy]=useState(false),[exportOptions,setExportOptions]=useState({format:'txt',content:'both',timestamps:true,guides:false,speeches:false});
- const busy=meeting.preparing||meeting.starting||meeting.stopping||meeting.sessionBusy;
+ const busy=meeting.preparing||meeting.starting||meeting.stopping||meeting.sessionBusy||openingHistory!==null;
  const locked=busy||meeting.listening||meeting.voiceSpeaking||meeting.composeBusy||meeting.pending>0;
- const notify=text=>setNotice(text);
+ const notify=React.useCallback(text=>setNotice(text),[]);
  useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),3500);return()=>clearTimeout(t);},[notice]);
  useEffect(()=>{try{localStorage.setItem('maestra-density-v4',String(size));}catch{}},[size]);
  useEffect(()=>{if(pendingStart&&meeting.ready&&!busy){setPendingStart(false);void meeting.start();}else if(pendingStart&&meeting.error&&!meeting.preparing)setPendingStart(false);},[pendingStart,meeting.ready,busy,meeting.error]);
  const [summaryOpen,setSummaryOpen]=useState(false),[finishing,setFinishing]=useState(false);
  const [toolTab,setToolTab]=useState('speech');
  const summary=React.useMemo(()=>ended?meetingSummary(meeting.records):'',[ended,meeting.records]);
- const copy=async text=>{try{await navigator.clipboard.writeText(text);notify('복사했습니다');}catch{notify('복사 권한을 확인해 주세요');}};
+ const copy=React.useCallback(async text=>{try{await navigator.clipboard.writeText(text);notify('복사했습니다');}catch{notify('복사 권한을 확인해 주세요');}},[notify]);
+ const meetingActions=useRef(meeting);meetingActions.current=meeting;
+ const transcriptActions=React.useMemo(()=>Object.fromEntries(['retryRecord','assignSpeaker','changeTranslationPacing'].map(name=>[name,(...args)=>meetingActions.current[name](...args)])),[]);
+ const transcriptMeeting=React.useMemo(()=>({...transcriptActions,records:meeting.records,ready:meeting.ready,speechProvider:meeting.speechProvider,separateSpeakers:meeting.separateSpeakers,translationPacing:meeting.translationPacing}),[transcriptActions,meeting.records,meeting.ready,meeting.speechProvider,meeting.separateSpeakers,meeting.translationPacing]);
+ const enableTranslation=React.useCallback(()=>{setMode('translate');notify('이후 영어 발화부터 한국어로 번역합니다');},[notify]);
  const homeBusy=meeting.archiveLoading||busy||meeting.voiceStarting||meeting.composeBusy||leaving||finishing;
  const goHome=async(discard=false)=>{
    if(homeBusy)return;
@@ -203,12 +267,23 @@ function App(){
    try{const rows=await meeting.finishRecording();setEnded(true);if(meetingSummary(rows)){setSummaryOpen(true);notify('요약본이 정리되었습니다.');}else notify('요약할 주요 안건이 없습니다.');}
    finally{setFinishing(false);}
  };
- const openHistory=async id=>{const saved=meeting.sessions.find(s=>s.id===id);setMode(saved?.records.length&&saved.records.every(r=>r.transcriptOnly||r.language==='ko-KR')?'transcript':'translate');await meeting.openMeeting(id);setScreen('live');setEnded(true);setSearch('');if(!meeting.ready)void meeting.prepare();};
+ const openHistory=async id=>{
+   if(openingHistoryRef.current)return;
+   openingHistoryRef.current=true;setOpeningHistory(id);
+   try{
+     const saved=meeting.sessions.find(s=>s.id===id);
+     setMode(saved?.records.length&&saved.records.every(r=>r.transcriptOnly||r.language==='ko-KR')?'transcript':'translate');
+     await meeting.openMeeting(id);setScreen('live');setEnded(true);setSearch('');
+     if(!meeting.ready)void meeting.prepare();
+   }catch{notify('회의 기록을 열지 못했습니다. 다시 시도해 주세요.');}
+   finally{openingHistoryRef.current=false;setOpeningHistory(null);}
+ };
  const download=async()=>{setExportBusy(true);try{const blob=await meetingExport(meeting,exportOptions),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`미팅-${new Date(meeting.activeSessionDate).toLocaleDateString('sv-SE')}.${exportOptions.format}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('파일을 내보냈습니다');setExportOpen(false);}catch{notify('파일 생성에 실패했습니다. 다시 시도해 주세요.');}finally{setExportBusy(false);}};
  return <div className={`maestra-app ${screen==='setup'?'setup-view':''}`} style={{'--caption-size':`${size}px`}}>
  {screen==='history'?<main className="archive-home">
    <div className="archive-content">
      <button type="button" className="primary-button new-note" disabled={busy||leaving||!!meeting.recovery} onClick={newNote}>새 노트</button>
+     {openingHistory!==null&&<p role="status">회의 기록을 여는 중…</p>}
      <MeetingHistory meeting={{...meeting,openMeeting:openHistory}} locked={locked||meeting.archiveLoading} onDelete={setDeleting}/>
    </div>
  </main>:screen==='setup'?<main className="setup-main"><div className="setup-box"><h1>오늘 어떤 회의를 시작할까요?</h1><div className="mode-switch"><button aria-pressed={mode==='translate'} onClick={()=>setMode('translate')}><Languages size={14}/>받아쓰기 + 번역</button><button aria-pressed={mode==='transcript'} onClick={()=>setMode('transcript')}><FileText size={14}/>받아쓰기만</button></div><div className="language-pair"><select aria-label="발화 언어" value={meeting.language} onChange={e=>meeting.changeLanguage(e.target.value)}><option value="auto">언어 감지 · 영어 / 한국어</option><option value="en-US">English</option><option value="ko-KR">한국어</option></select><ArrowRight size={16}/><span>{mode==='translate'?'한국어':'원문 그대로'}</span></div><div className="setup-options">{meeting.availableProvider==='deepgram'&&<select aria-label="받아쓰기 모델" value={meeting.speechProvider} disabled={locked} onChange={event=>meeting.chooseSpeechProvider(event.target.value)}><option value="deepgram">Deepgram</option><option value="google">Gemini · 수동 화자 지정</option></select>}{meeting.speechProvider==='deepgram'&&<label><input type="checkbox" checked={meeting.separateSpeakers} disabled={locked} onChange={event=>meeting.setSeparateSpeakers(event.target.checked)}/>자동 화자 분리</label>}<select aria-label="음성 입력" value={meeting.source} onChange={e=>meeting.changeSource(e.target.value)}><option value="microphone">마이크</option><option value="meeting-tab" disabled={!navigator.mediaDevices?.getDisplayMedia}>회의 탭 오디오</option></select><label><input type="checkbox" checked={autoGuides} onChange={e=>setAutoGuides(e.target.checked)}/>추천 답변</label></div><div className="start-area"><span>누르고 말하기 시작</span><button className="record-button" aria-label="새 회의 시작" disabled={locked||meeting.speechProvider==='pending'||!localModel.ready} onClick={begin}><Mic size={30}/></button></div><button className="workspace-preview" onClick={()=>{setScreen('live');if(!meeting.ready)void meeting.prepare();}}>마이크 없이 작업 화면 열기</button>{LOCAL_QWEN&&<p className="privacy-mini" role="status">{localModel.message}</p>}<p className="privacy-mini">{LOCAL_QWEN?'음성은 이 컴퓨터의 Qwen에서, 번역·추천 답변은 Google에서 처리합니다.':meeting.speechProvider==='deepgram'?'회의 음성은 Deepgram에서 받아쓰고, 번역과 내 발언은 Google에서 처리합니다.':'음성과 텍스트를 Google로 전송해 처리합니다.'}</p></div></main>:<main className="live-main">
@@ -216,7 +291,7 @@ function App(){
  <header className="live-top"><span>{new Date(meeting.activeSessionDate).toLocaleDateString('ko-KR')} · {meeting.records.length}개 발화</span><span role="status">{meeting.preparing||meeting.starting?'연결 중':meeting.stopping?'마무리 중':meeting.listening?(meeting.level>0.01?'음성 입력 중':'음성 입력 대기 중'):ended?'회의 종료됨':'일시정지'} {meeting.elapsed>0&&formatTime(meeting.elapsed)} {meeting.pending>0&&`· ${meeting.pending}건 처리 중`}</span><input aria-label="회의 기록 검색" placeholder="기록 검색" value={search} onChange={e=>setSearch(e.target.value)}/></header>
  {(meeting.error||meeting.storageError)&&<div role="alert" className="live-error">{meeting.error||meeting.storageError}<button onClick={resume} disabled={busy}>다시 연결</button></div>}
  <div className="meeting-workspace">
- <LiveTranscript key={meeting.activeSessionId} meeting={meeting} mode={mode} size={size} copy={copy} edit={setEditing} search={search} onEnableTranslation={()=>{setMode('translate');notify('이후 영어 발화부터 한국어로 번역합니다');}}/>
+ <LiveTranscript key={meeting.activeSessionId} meeting={transcriptMeeting} mode={mode} size={size} copy={copy} edit={setEditing} search={search} onEnableTranslation={enableTranslation}/>
 
  <aside aria-label="회의 발언 도구" className="meeting-tools" data-tab={toolTab==='speech'&&!speechVisible?(guideVisible?'guide':'summary'):toolTab==='guide'&&!guideVisible?(speechVisible?'speech':'summary'):toolTab}>
  <nav className="tool-tabs" aria-label="회의 도구 선택">{speechVisible&&<button onClick={()=>setToolTab('speech')}>내 발언</button>}{guideVisible&&<button onClick={()=>setToolTab('guide')}>추천 답변</button>}<button onClick={()=>setToolTab('summary')}>회의 요약</button></nav>

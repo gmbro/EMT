@@ -1,3 +1,4 @@
+import { createSharedTranslations } from './shared-translation.mjs';
 import {LOCAL_QWEN} from './qwen-live.mjs';
 import {sentenceChunks} from './preview-policy.mjs';
 import { validateReplyOptions, clarificationFallback } from './reply-options.mjs';
@@ -12,7 +13,7 @@ import { prepareCloudTranslation, translateCloud } from './cloud-translation.mjs
 const opposite = language => language === 'ko-KR' ? 'en-US' : 'ko-KR';
 
 export class MeetingEngine {
-  constructor({ translationMode = 'cloud' } = {}) { this.translationMode = translationMode; this.resultCache = new Map(); this.cacheEpoch = 0; this.controller = new AbortController(); this.nativeTranslators = new Map(); this.translationKinds = new Map(); this.translationPreparing = new Map(); this.destroyed = false; }
+  constructor({ translationMode = 'cloud' } = {}) { this.translationMode = translationMode; this.resultCache = new Map(); this.sharedTranslations = createSharedTranslations(); this.cacheEpoch = 0; this.controller = new AbortController(); this.nativeTranslators = new Map(); this.translationKinds = new Map(); this.translationPreparing = new Map(); this.destroyed = false; }
   get canDraftTranslate() { return this.translationMode === 'cloud' || this.nativeTranslators.size > 0; }
   get cloudSpeech() { return this.translationMode === 'cloud'; }
   get client() { return this.modelClient ||= new ModelClient(); }
@@ -89,15 +90,20 @@ export class MeetingEngine {
   async transcribe(samples, language, { onText } = {}) {
     return this.client.request('transcribe', { samples, language, speechProfile: this.speechProfile }, undefined, update => onText?.(update.text));
   }
-  clearCloudCache() { this.cacheEpoch++; this.resultCache.clear(); }
+  clearCloudCache() { this.cacheEpoch++; this.resultCache.clear(); this.sharedTranslations.clear(); }
   async cloudChunk(text, language, options = {}) {
     const key = JSON.stringify([text,language,options.context||'',options.glossary||'',options.task||'translate']);
     const cached=this.resultCache.get(key), epoch=this.cacheEpoch;
-    if(options.signal?.aborted)throw Object.assign(new Error('취소됨'),{name:'AbortError'});
+    if(this.destroyed||options.signal?.aborted)throw Object.assign(new Error('취소됨'),{name:'AbortError',code:'CANCELLED'});
     if(cached){options.onText?.(cached.text);return {...cached,reused:true};}
-    const result=await translateCloud(text,language,options);
-    if(epoch===this.cacheEpoch){this.resultCache.set(key,result);if(this.resultCache.size>160)this.resultCache.delete(this.resultCache.keys().next().value);}
-    return result;
+    // Draft/final and timeout/retry policies must never inherit one another's
+    // lifecycle. A custom retry sleeper is intentionally not shared.
+    const requestKey=options.sleep ? {} : JSON.stringify([key,options.draft===undefined?false:options.draft,options.replyCount===undefined?1:options.replyCount,options.timeoutMs===undefined?28000:options.timeoutMs,options.retries===undefined?(options.draft?0:2):options.retries]);
+    return this.sharedTranslations.run(requestKey,async(signal,publication)=>{
+      const result=await translateCloud(text,language,{...options,signal,...publication});
+      if(epoch===this.cacheEpoch&&!this.destroyed&&!signal.aborted){this.resultCache.set(key,result);if(this.resultCache.size>160)this.resultCache.delete(this.resultCache.keys().next().value);}
+      return result;
+    },options);
   }
   async translateDraft(text, language, { onText, signal, context, glossary } = {}) {
     if (this.translationMode === 'cloud') {
@@ -171,6 +177,7 @@ export class MeetingEngine {
   clearReplies() { this.replySession?.destroy?.(); this.replySession = null; }
   destroy() {
     this.destroyed = true;
+    this.clearCloudCache();
     this.controller.abort();
     this.modelClient?.destroy();
     this.mtClient?.destroy();

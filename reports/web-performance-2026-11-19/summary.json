@@ -1,0 +1,38 @@
+{
+  "synthetic": true,
+  "recordCount": 2000,
+  "localDevBrowser": true,
+  "metric": "click/input capture to second requestAnimationFrame; not field INP",
+  "cases": {
+    "open": {
+      "beforeMedianMs": 196,
+      "afterMedianMs": 50,
+      "beforeSamples": 1,
+      "afterSamples": 1
+    },
+    "settings": {
+      "beforeMedianMs": 63.0,
+      "afterMedianMs": 24.0,
+      "beforeSamples": 6,
+      "afterSamples": 6
+    },
+    "typing": {
+      "beforeMedianMs": 62.5,
+      "afterMedianMs": 54.0,
+      "beforeSamples": 2,
+      "afterSamples": 2
+    },
+    "pacing": {
+      "beforeMedianMs": 58.5,
+      "afterMedianMs": 23.5,
+      "beforeSamples": 2,
+      "afterSamples": 2
+    }
+  },
+  "observedLongTasks": {
+    "before": 12,
+    "after": 0,
+    "beforeMaxMs": 172,
+    "afterMaxMs": 0
+  }
+}

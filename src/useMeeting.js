@@ -1,3 +1,4 @@
+import { createRecordIndex, unchangedRecord, createInputActivityPublisher, createLatestCheckpointWriter } from './meeting-state.mjs';
 import { createTranslationGroups, TRANSLATION_PACING } from './translation-groups.mjs';
 import {createDeepgramLive} from './deepgram-live.mjs';
 import {englishForTranslation} from './streaming-transcript.mjs';
@@ -87,6 +88,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [level, setLevel] = useState(0);
+  const inputActivity = useRef(null);
+  inputActivity.current ||= createInputActivityPublisher(setLevel);
   const [elapsed, setElapsed] = useState(0);
   const [interim, setInterim] = useState('');
   const [partial, setPartial] = useState('');
@@ -125,6 +128,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   const speechQueue = useRef(Promise.resolve()), translationQueue = useRef(Promise.resolve());
   const speechJobs = useRef(new Set()), translationJobs = useRef(new Set());
   const historyRef = useRef(history), readyRef = useRef(ready);
+  const recordIndex = useRef(null);
+  recordIndex.current ||= createRecordIndex();
   historyRef.current = history; readyRef.current = ready;
   const progressFiles = useRef(new Map());
   const draftKey = useRef(null), partialRunner = useRef(null), partialAbort = useRef(null);
@@ -176,17 +181,21 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
       .catch(() => { if (mounted) { setArchiveLoading(false); setStorageError('회의 저장소를 열지 못했어요. 브라우저 저장 공간·권한을 확인하고 기록은 파일로 저장해 주세요.'); } });
     return () => { mounted = false; };
   }, []);
+  const finishingCheckpoint = useRef(false), checkpointWriter = useRef(null);
+  checkpointWriter.current ||= createLatestCheckpointWriter({
+    write: (key, snapshot) => store.current.checkpoint(key, snapshot),
+    onSaved: ({ key, stamp }) => { if (checkpointKey.current === key) lastCheckpoint.current = stamp; },
+    onError: () => { if (alive.current) setStorageError('임시 저장에 실패했습니다. 홈에서 저장을 다시 시도해 주세요.'); },
+  });
   useEffect(() => {
     const save = () => {
-      if (!hasWork()) return;
+      if (finishingCheckpoint.current || !hasWork()) return;
       const key=ensureDraftKey();
       if (!key) return;
       const stamp=checkpointStamp();
       if (stamp===lastCheckpoint.current) return;
       const snapshot=currentSnapshot();
-      void store.current.checkpoint(key,snapshot).then(()=>{
-        if (checkpointKey.current===key) lastCheckpoint.current=stamp;
-      }).catch(()=>setStorageError('임시 저장에 실패했습니다. 홈에서 저장을 다시 시도해 주세요.'));
+      checkpointWriter.current.submit(key, stamp, snapshot);
     };
     // Navigation can cancel an IndexedDB transaction. Keep the final changes
     // in this tab until the user chooses what belongs in the archive.
@@ -242,19 +251,23 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     const selected=new Set(ids);
     mutateHistory(rows=>rows.map(row=>selected.has(row.id)?{...row,speakerId:value,speakerManual:true}:row));
   }
+  function findRecord(id) { return recordIndex.current.get(historyRef.current.records, id); }
   function appendRecord(record) {
     if(speakerRef.current&&!record.mixedSpeakers)record={...record,speakerId:speakerRef.current,speakerManual:true};
     const current = historyRef.current, records = [...current.records];
     const index = records.findIndex(row => row.createdAt > record.createdAt);
     records.splice(index < 0 ? records.length : index, 0, record);
+    recordIndex.current.inserted(current.records, records, index < 0 ? records.length - 1 : index);
     publishHistory({ ...current, records, characterCount: current.characterCount + captionLength(record) });
   }
   function updateRecord(id, update) {
-    const current = historyRef.current, index = current.records.findIndex(row => row.id === id);
+    const current = historyRef.current, index = recordIndex.current.indexOf(current.records, id);
     if (index < 0) return;
-    const previous = current.records[index], record = { ...previous, ...update }, records = [...current.records];
+    const previous = current.records[index], record = { ...previous, ...update };
     if(previous.speakerManual&&!record.mixedSpeakers){record.speakerId=previous.speakerId;record.speakerManual=true;}
-    records[index] = record;
+    if (unchangedRecord(previous, record)) return;
+    const records = [...current.records]; records[index] = record;
+    recordIndex.current.updated(current.records, records, index);
     const delta = record.original === previous.original && record.translation === previous.translation ? 0 : captionLength(record) - captionLength(previous);
     publishHistory({ ...current, records, characterCount: current.characterCount + delta });
   }
@@ -344,7 +357,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     pendingCapture.current?.controller.abort();
     for (const track of pendingCapture.current?.stream?.getTracks() || []) track.stop();
     pendingCapture.current = null;
-    setListening(false); setStarting(false); setLevel(0); resetDraft();
+    setListening(false); setStarting(false); inputActivity.current.reset(); resetDraft();
     if (stopTask.current) {
       if (!flush) recognition.current?.abort();
       return stopTask.current;
@@ -407,7 +420,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     translationJobs.current.add(job); syncPending();
     const queuedAt = performance.now(), requestSignal=sessionController.current.signal;
     updateRecord(record.id, { segmentReadyAt:queuedAt, translationRequestAt:undefined, firstTranslationAfterRequestMs:undefined, firstTranslationAfterSegmentMs:undefined });
-    const valid=()=>session===epoch.current&&alive.current&&historyRef.current.records.some(r=>r.id===record.id&&r.original===record.original);
+    const valid=()=>session===epoch.current&&alive.current&&findRecord(record.id)?.original===record.original;
     const task = translationPool.current.run(async () => {
       if (session !== epoch.current || !alive.current) return;
       updateRecord(record.id, { status: 'translating', error: '' });
@@ -416,7 +429,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         const inFlight=previewTasks.current.get(record.id);
         if(inFlight?.text===record.original && inFlight.glossary===glossaryRef.current) await inFlight.promise.catch(()=>{});
         if(!valid()||requestSignal.aborted)return;
-        const previous=historyRef.current.records.find(r=>r.id===record.id)?.translation;
+        const previous=findRecord(record.id)?.translation;
         const publication=createTranslationPublication(previous);
         started=performance.now();
         updateRecord(record.id,{translationRequestAt:started,waitMilliseconds:Math.round(started-queuedAt)});
@@ -424,7 +437,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
           onRetry:({attempt})=>{publication.retry();if(valid())updateRecord(record.id,{status:'recovering',retryAttempt:attempt,autoAttempts:(record.autoAttempts||0)+attempt});},
           onText: text => {
             if(!valid()||!publication.accept(text))return;
-            const row=historyRef.current.records.find(r=>r.id===record.id),publishedAt=performance.now();
+            const row=findRecord(record.id),publishedAt=performance.now();
             updateRecord(record.id, { translation:text,status:'translating',
               firstTranslationAfterRequestMs:row.firstTranslationAfterRequestMs??Math.round(publishedAt-started),
               firstTranslationAfterSegmentMs:row.firstTranslationAfterSegmentMs??Math.round(publishedAt-queuedAt),
@@ -577,7 +590,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         active.current = true;
         const recorder = engine.current.cloudSpeech ? await createCloudCapture(stream,{audioContext}) : await createAudioCapture(stream, { maxSeconds: 6, silenceMs: 650,
           onSegment: segment => { if (session === epoch.current) enqueue({ ...segment, segmentKey: `${token}:${segment.segmentId}` }, language); },
-          onPreview: segment => { if (session === epoch.current) receivePreview(segment, language, `${token}:${segment.segmentId}`); }, onLevel: setLevel,
+          onPreview: segment => { if (session === epoch.current) receivePreview(segment, language, `${token}:${segment.segmentId}`); }, onLevel: value => inputActivity.current.update(value),
           onError: failure => { setError(failure.message); void stopRef.current?.(); }, onEnded: () => void stopRef.current?.() });
         if (token !== startToken.current) { await recorder.stop({ flush: false }); return; }
         capture.current = recorder; setListening(true);
@@ -596,7 +609,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     livePreviewRunner.current ||= createLatestTaskRunner({delay:0,canRun:()=>translationJobs.current.size<2,
       run:async(task,emit)=>{
         if(task.session!==epoch.current)return;
-        const row=historyRef.current.records.find(r=>r.id===task.id);
+        const row=findRecord(task.id);
         if(!row?.sourcePending)return;
         const previous=previewTasks.current.get(task.id);
         if(previous?.glossary===task.glossary && !needsPreview(previous.text,task.text))return;
@@ -608,7 +621,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         finally{if(livePreviewAbort.current===controller)livePreviewAbort.current=null;}
       },
       publish:(text,task)=>{
-        const row=historyRef.current.records.find(r=>r.id===task.id);
+        const row=findRecord(task.id);
         if(alive.current&&task.session===epoch.current&&row && (row.sourcePending ? canPublishPreview(row.original,task.text) : row.status==='translating'&&glossaryRef.current===task.glossary&&canPublishPreview(row.original,task.text))&&typeof text==='string')updateRecord(task.id,{translation:text,firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(performance.now()-row.captureStartedAt)});
       },onError:()=>{},
     });
@@ -634,7 +647,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
         onUpdate: record => {
           if (session !== epoch.current || !alive.current) return;
           record={...record,sample:samplePreviewToken.current!==null};
-          const previous=historyRef.current.records.find(row=>row.id===record.id);
+          const previous=findRecord(record.id);
           if(previous && previous.language!==record.language){livePreviewRunner.current?.invalidate();livePreviewAbort.current?.abort();draftTranslator.current.clear();}
           const requested=previewTasks.current.get(record.id);
           // Revisions (e.g. added negation) supersede an in-flight draft.
@@ -644,7 +657,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
             livePreviewAbort.current?.abort();livePreviewRunner.current?.invalidate();
           }
           const update = { ...record,captureStartedAt:captureClock.current,firstSourceAfterCaptureMs:previous?.firstSourceAfterCaptureMs??Math.round(performance.now()-captureClock.current), translation: record.language === 'ko-KR' ? '' : previous?.translation || record.translation, status: record.sourcePending ? 'recognizing' : record.language === 'ko-KR' ? 'recognizing' : 'translating', error: '' };
-          if (historyRef.current.records.some(row => row.id === record.id)) updateRecord(record.id, update);
+          if (findRecord(record.id)) updateRecord(record.id, update);
           else appendRecord(update);
           previewLive(record,currentEngine,session);
         },
@@ -653,7 +666,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
           const preview=previewTasks.current.get(record.id);
           if(preview && (glossaryRef.current!==preview.glossary || !canPublishPreview(record.original,preview.text))){livePreviewAbort.current?.abort();livePreviewRunner.current?.invalidate();}
           record={...record,sample:samplePreviewToken.current!==null};
-          const previous=historyRef.current.records.find(row=>row.id===record.id);
+          const previous=findRecord(record.id);
           updateRecord(record.id, { ...record, translation: record.language === 'ko-KR' ? '' : previous?.translation || '', status: record.language === 'ko-KR' ? 'complete' : 'translating' });
           queueTranslation(record, currentEngine, session);
         },
@@ -714,7 +727,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     // Observe failure immediately while audio capture starts in parallel.
     void connecting.catch(()=>{});
     try {
-      recorder=await createAudioCapture(stream,{audioBuffer,audioContext,onInputStatus:setError,onPCM:samples=>{if(live)live.push(samples);else{bufferedSamples+=samples.length;if(bufferedSamples>400000){controller.abort();throw new Error('음성 연결이 늦어져 시작을 중단했어요. 다시 시작해 주세요.');}buffered.push(samples.slice());}},onLevel:setLevel,onError:failure=>{setError(failure.message);controller.abort();void stopRef.current?.();},onEnded:()=>{if(!audioBuffer)setError('오디오 입력이 종료되었습니다. 장치를 확인하고 다시 연결해 주세요.');void stopRef.current?.();}});
+      recorder=await createAudioCapture(stream,{audioBuffer,audioContext,onInputStatus:setError,onPCM:samples=>{if(live)live.push(samples);else{bufferedSamples+=samples.length;if(bufferedSamples>400000){controller.abort();throw new Error('음성 연결이 늦어져 시작을 중단했어요. 다시 시작해 주세요.');}buffered.push(samples.slice());}},onLevel:value=>inputActivity.current.update(value),onError:failure=>{setError(failure.message);controller.abort();void stopRef.current?.();},onEnded:()=>{if(!audioBuffer)setError('오디오 입력이 종료되었습니다. 장치를 확인하고 다시 연결해 주세요.');void stopRef.current?.();}});
       live=await connecting;
       if (controller.signal.aborted) throw new Error('음성 연결이 취소됐어요.');
       for(const pcm of buffered)live.push(pcm);buffered.length=0;
@@ -802,13 +815,13 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   }
   function retryRecord(id) {
     if (!ready || preparingRef.current || clearing.current || stopTask.current) return;
-    const record = historyRef.current.records.find(record => record.id === id);
+    const record = findRecord(id);
     if (!record || record.status !== 'error' || !record.original.trim()) return;
     updateRecord(id, { status: 'translating', error: '' });
     return queueTranslation({ ...record, startedAt: performance.now() });
   }
   function editRecord(id,text,inputLanguage) {
-    const row=historyRef.current.records.find(row=>row.id===id);
+    const row=findRecord(id);
     if(!row||row.sourcePending&&row.status!=='error'||translationJobs.current.has(id)||!text.trim()||text.length>20000)return false;
     const updated={...row,original:text.trim(),language:inputLanguage,translation:'',originalBeforeEdit:row.originalBeforeEdit||row.original,userEdited:true,status:'translating',sourcePending:false,startedAt:performance.now()};
     previewContexts.current.delete(id);previewTasks.current.delete(id);setReplies(rows=>rows.filter(r=>r.sourceId!==id));setNewReplies(null);updateRecord(id,updated);void queueTranslation(updated);return true;
@@ -899,9 +912,8 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   }
   async function suggestReplies(mode, {count=2,automatic=false,alternatives=false,sourceId}={}) {
     if(!readyRef.current||replyController.current)return;
-    const sourceRow=sourceId
-      ? historyRef.current.records.find(row=>row.id===sourceId&&row.language==='en-US'&&!row.sourcePending)
-      : historyRef.current.records.filter(row=>row.language==='en-US'&&!row.sourcePending).at(-1);
+    const candidate=sourceId ? findRecord(sourceId) : historyRef.current.records.findLast(row=>row.language==='en-US'&&!row.sourcePending);
+    const sourceRow=candidate?.language==='en-US'&&!candidate.sourcePending ? candidate : undefined;
     const english=sourceRow?.original;
     if(!english){if(!automatic)setReplyError('확정된 영어 발언이 있어야 답변 가이드를 만들 수 있어요.');return;}
     const session=epoch.current,controller=new AbortController();replyController.current=controller;setReplyBusy(true);setReplyError('');
@@ -921,7 +933,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   function scheduleReplies(english, sourceId) {
     if(!displayOptions.current.guidesEnabled)return;
     const source = sourceId
-      ? historyRef.current.records.find(row=>row.id===sourceId)
+      ? findRecord(sourceId)
       : historyRef.current.records.findLast(row=>row.language==='en-US'&&!row.sourcePending&&row.original===english);
     if(!source)return;
     replyRunner.current ||= createReplyScheduler({
@@ -974,19 +986,23 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
       records:historyRef.current.records,replies:repliesRef.current,speeches};
   }
   async function finishCheckpoint(key,snapshot) {
-    await storeReady.current;
-    await store.current.finishCheckpoint(key,snapshot);
-    if (key) {
-      sessionStorage.removeItem(key);
-      if (readPendingKey()===key) sessionStorage.removeItem(refreshKey);
-    }
-    checkpointKey.current=null;
-    lastCheckpoint.current=null;
-    if (snapshot) {
-      const next=mergeMeeting(archiveRef.current,snapshot,snapshot.records);
-      archiveRef.current=next;setSessions(next);
-    }
-    setStorageError('');
+    finishingCheckpoint.current = true;
+    try {
+      await checkpointWriter.current.flush();
+      await storeReady.current;
+      await store.current.finishCheckpoint(key,snapshot);
+      if (key) {
+        sessionStorage.removeItem(key);
+        if (readPendingKey()===key) sessionStorage.removeItem(refreshKey);
+      }
+      checkpointKey.current=null;
+      lastCheckpoint.current=null;
+      if (snapshot) {
+        const next=mergeMeeting(archiveRef.current,snapshot,snapshot.records);
+        archiveRef.current=next;setSessions(next);
+      }
+      setStorageError('');
+    } finally { finishingCheckpoint.current = false; }
   }
   async function resolveRecovery(save) {
     const key=recoveryKey.current;

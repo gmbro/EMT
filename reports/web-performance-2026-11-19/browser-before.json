@@ -1,0 +1,202 @@
+{
+  "synthetic": true,
+  "interactionPaintMs": [
+    {
+      "name": "오전 10:00 회의 열기",
+      "ms": 196
+    },
+    {
+      "name": "설정",
+      "ms": 70
+    },
+    {
+      "name": "닫기",
+      "ms": 66
+    },
+    {
+      "name": "설정",
+      "ms": 62
+    },
+    {
+      "name": "닫기",
+      "ms": 61
+    },
+    {
+      "name": "설정",
+      "ms": 64
+    },
+    {
+      "name": "닫기",
+      "ms": 61
+    },
+    {
+      "name": "speech-input",
+      "ms": 61
+    },
+    {
+      "name": "speech-input",
+      "ms": 64
+    },
+    {
+      "name": "다 말하고 번역하기",
+      "ms": 59
+    },
+    {
+      "name": "문단 나누기",
+      "ms": 58
+    }
+  ],
+  "longTasks": [
+    172,
+    66,
+    66,
+    62,
+    58,
+    57,
+    60,
+    58,
+    56,
+    58,
+    56,
+    55
+  ],
+  "events": [
+    {
+      "type": "pointerdown",
+      "duration": 232,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 232,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 232,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 80,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 104,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerup",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "click",
+      "duration": 96,
+      "inputDelay": 0
+    },
+    {
+      "type": "pointerdown",
+      "duration": 80,
+      "inputDelay": 1
+    },
+    {
+      "type": "pointerup",
+      "duration": 80,
+      "inputDelay": 1
+    },
+    {
+      "type": "click",
+      "duration": 80,
+      "inputDelay": 1
+    },
+    {
+      "type": "pointerdown",
+      "duration": 80,
+      "inputDelay": 1
+    },
+    {
+      "type": "pointerup",
+      "duration": 80,
+      "inputDelay": 1
+    },
+    {
+      "type": "click",
+      "duration": 80,
+      "inputDelay": 1
+    }
+  ],
+  "firstUIReadyMs": 92,
+  "transcriptMutations": 0
+}

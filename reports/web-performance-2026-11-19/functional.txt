@@ -1,0 +1,81 @@
+Meeting verification (synthetic fixtures only)
+Transcript onlyPreparePrepare warm connectionEnglish sampleKorean sampleBilingual single connectionConcurrent sample and speechGuideKorean own voice sampleSynthetic two sentence meetingQuestion without punctuationQuestion during cooldownCheck IndexedDB migration and long archiveCreate business review meetingCreate synthetic 2000-row meeting
+
+ready · pending 0 · idle · composer idle
+
+Store check
+{
+  "imported": 1,
+  "legacyUntouched": true,
+  "afterReload": 2,
+  "rows": 2000,
+  "first": "검증용 한국어 발언 1: 아직 계약을 승인하지 않았습니다.",
+  "last": "Synthetic meeting record 2000: Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. Please review the scope and confirm the conditions before we make a decision. ",
+  "speech": "We have not approved it yet.",
+  "guide": "Could you clarify the scope?",
+  "koreanStatus": "complete"
+}
+
+Records
+[
+  {
+    "id": "befcd48d-4812-42a1-8566-11d17ad5bb3d",
+    "createdAt": 1795018500368,
+    "startedAt": 144981.81499999762,
+    "translation": "내일까지 회의 안건을 보내주시겠어요?",
+    "input": "voice",
+    "sample": true,
+    "live": true,
+    "speechModel": "transcribe",
+    "original": "Could you send me the meeting agenda by tomorrow?",
+    "language": "en-US",
+    "sourcePending": false,
+    "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+    "liveFirstSourceStreamMs": 426,
+    "liveLastVoiceStreamMs": 346,
+    "translationBatch": true,
+    "translationPacing": "paragraph",
+    "captureStartedAt": 142079.2350000143,
+    "firstSourceAfterCaptureMs": 2903,
+    "status": "complete",
+    "error": "",
+    "segmentReadyAt": 146839.57499998808,
+    "translationRequestAt": 146839.85000002384,
+    "firstTranslationAfterRequestMs": 1023,
+    "firstTranslationAfterSegmentMs": 1023,
+    "waitMilliseconds": 0,
+    "firstTranslationAfterCaptureMs": 5784,
+    "milliseconds": 2922,
+    "translationCompletedAt": 147903.68999999762,
+    "translationMilliseconds": 1064,
+    "browserUpdates": 10,
+    "firstTranslationDomMs": 5785
+  }
+]
+Speech
+[
+  {
+    "id": "7ded684a-3c9c-4463-9cfc-5e9b38ab6835",
+    "ko": "제안은 이해했습니다. 다만 아직 승인한 것은 아니며, 내부 검토 후 답변드리겠습니다.",
+    "en": "I understand the proposal. However, it hasn't been approved yet, so we will get back to you after an internal review.",
+    "createdAt": 1795018497443,
+    "status": "complete",
+    "error": "",
+    "input": "text"
+  }
+]
+Replies
+[
+  {
+    "ko": "내일 몇 시까지 전달해 드리면 될까요? 포함해야 할 특정 안건이 있는지도 알려주시면 감사하겠습니다.",
+    "en": "By what time tomorrow would you need it? Please also let me know if there are specific agenda items to include.",
+    "sourceId": "befcd48d-4812-42a1-8566-11d17ad5bb3d",
+    "sourceAt": 1795018500368
+  },
+  {
+    "ko": "내일까지 필요한 특정 형식이나 포함되어야 할 필수 항목이 있는지 확인해 주실 수 있나요?",
+    "en": "Could you confirm if there is a specific format or mandatory items that need to be included by tomorrow?",
+    "sourceId": "befcd48d-4812-42a1-8566-11d17ad5bb3d",
+    "sourceAt": 1795018500368
+  }
+]

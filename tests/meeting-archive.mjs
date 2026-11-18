@@ -62,3 +62,16 @@ test('damaged speech output or invalid date type cannot erase other valid meetin
  });
 
 test('source-only English archive remains complete without manufacturing a missing translation error',()=>{const local=storage();saveMeetings(local,[{id:'transcript',createdAt:'2026-11-01T00:00:00Z',records:[{...row('one'),translation:'',transcriptOnly:true}]}]);assert.equal(loadMeetings(local)[0].records[0].status,'complete');});
+
+test('structured IndexedDB archives normalize without JSON and preserve all bilingual records', async () => {
+ const { normalizeMeetings } = await import('../src/meeting-archive.mjs');
+ const records=Array.from({length:2000},(_,i)=>({id:`direct-${i}`,language:'en-US',original:`Original ${i} 😀`,translation:`번역 ${i}`,createdAt:1793160000000+i,status:'complete',translationBatch:true}));
+ const raw=[{id:'structured',createdAt:'2026-11-19T01:00:00Z',records,replies:[],speeches:[]}];
+ const before=structuredClone(raw);
+ const direct=normalizeMeetings(raw);
+ const legacy=loadMeetings({getItem:()=>JSON.stringify({version:1,sessions:raw})});
+ assert.deepEqual(direct,legacy);assert.deepEqual(raw,before);
+ assert.equal(direct[0].records.length,2000);assert.equal(direct[0].records.at(-1).original,'Original 1999 😀');
+ assert.equal(direct[0].records[0].translationBatch,true);
+ assert.deepEqual(normalizeMeetings(null),[]);
+});

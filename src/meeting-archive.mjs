@@ -1,9 +1,9 @@
 export const ARCHIVE_KEY = 'habi-meetings-v1';
-export function loadMeetings(storage) {
-  try {
-    const data = JSON.parse(storage.getItem(ARCHIVE_KEY) || 'null');
-    if (data?.version !== 1 || !Array.isArray(data.sessions)) return [];
-    return data.sessions.filter(session => session && typeof session.id === 'string' && typeof session.createdAt === 'string' && Number.isFinite(Date.parse(session.createdAt)) && Array.isArray(session.records))
+// IndexedDB already returns structured data; normalize it without allocating
+// a second complete JSON string and reparsing every transcript on the UI thread.
+export function normalizeMeetings(sessions) {
+  if (!Array.isArray(sessions)) return [];
+    return sessions.filter(session => session && typeof session.id === 'string' && typeof session.createdAt === 'string' && Number.isFinite(Date.parse(session.createdAt)) && Array.isArray(session.records))
       .map(session => ({ glossary:typeof session.glossary==='string'?session.glossary.slice(0,2000):'', purpose:typeof session.purpose==='string'?session.purpose.slice(0,300):'', id: session.id, createdAt: session.createdAt, updatedAt: session.updatedAt || session.createdAt,
         speeches: Array.isArray(session.speeches) ? session.speeches.filter(item => item && typeof item.id === 'string' && typeof item.ko === 'string').map(item => ({ ...item, en: typeof item.en === 'string' ? item.en : '', status: item.status === 'draft' ? 'draft' : item.status === 'complete' && typeof item.en === 'string' && item.en.trim() ? 'complete' : 'error', error: item.status === 'draft' ? '' : item.status === 'complete' && typeof item.en === 'string' && item.en.trim() ? '' : '작성이 중단됐어요. 다시 변환해 주세요.' })) : [],
         replies: Array.isArray(session.replies) ? session.replies.filter(item => item && typeof item.ko === 'string' && typeof item.en === 'string').slice(0, 3) : [],
@@ -12,6 +12,11 @@ export function loadMeetings(storage) {
           status: row.status === 'complete' && (row.language === 'ko-KR' || row.transcriptOnly === true || typeof row.translation === 'string' && row.translation.trim()) ? 'complete' : 'error', error: row.status === 'complete' && (row.language === 'ko-KR' || row.transcriptOnly === true || typeof row.translation === 'string' && row.translation.trim()) ? '' : '번역이 완료되지 않은 기록이에요. 다시 번역해 주세요.',
         })),
       })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+export function loadMeetings(storage) {
+  try {
+    const data = JSON.parse(storage.getItem(ARCHIVE_KEY) || 'null');
+    return data?.version === 1 ? normalizeMeetings(data.sessions) : [];
   } catch { return []; }
 }
 export function mergeMeeting(sessions, meta, records, now = new Date().toISOString()) {

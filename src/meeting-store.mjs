@@ -1,4 +1,4 @@
-import { ARCHIVE_KEY, loadMeetings } from './meeting-archive.mjs';
+import { loadMeetings, normalizeMeetings } from './meeting-archive.mjs';
 export const ARCHIVE_EVENT_KEY = 'meeting-archive-changed';
 
 // Keep large transcripts out of synchronous localStorage and the render path.
@@ -54,7 +54,7 @@ export function createMeetingStore({ indexedDB, storage, name = 'meeting-records
       await queue;
       return transaction(['sessions'], 'readonly', tx => {
         const request = tx.objectStore('sessions').getAll();
-        return () => loadMeetings({ getItem: key => key === ARCHIVE_KEY ? JSON.stringify({ version: 1, sessions: request.result }) : null });
+        return () => normalizeMeetings(request.result);
       });
     },
     checkpoint(key, session) {
