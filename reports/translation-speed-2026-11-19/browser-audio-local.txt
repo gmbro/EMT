@@ -1,0 +1,83 @@
+Meeting verification (synthetic fixtures only)
+Transcript onlyPreparePrepare warm connectionEnglish sampleKorean sampleBilingual single connectionConcurrent sample and speechGuideKorean own voice sampleSynthetic two sentence meetingQuestion without punctuationQuestion during cooldownCheck IndexedDB migration and long archiveCreate business review meetingCreate synthetic 2000-row meeting
+
+ready · pending 0 · idle · composer idle
+
+Store check
+null
+
+Records
+[
+  {
+    "id": "fdc866a5-a303-4a97-88bb-e26180f5992a",
+    "original": "We have not approved the contract. Could you confirm whether security review is included?",
+    "translation": "저희는 아직 계약을 승인하지 않았습니다. 보안 검토가 포함되어 있는지 확인해 주실 수 있나요?",
+    "language": "en-US",
+    "duration": 0,
+    "sample": false,
+    "input": "text",
+    "status": "complete",
+    "error": "",
+    "startedAt": 41451.14500004053,
+    "createdAt": 1795017161221,
+    "segmentReadyAt": 41451.94999998808,
+    "translationRequestAt": 41452.92500001192,
+    "firstTranslationAfterRequestMs": 732,
+    "firstTranslationAfterSegmentMs": 733,
+    "waitMilliseconds": 1,
+    "milliseconds": 838,
+    "translationCompletedAt": 42289.064999997616,
+    "translationMilliseconds": 836,
+    "browserUpdates": 18
+  },
+  {
+    "id": "6c470dd3-c0a3-4e2d-bb5f-1e7d9377198a",
+    "createdAt": 1795017195508,
+    "startedAt": 75738.33500003815,
+    "translation": "내일 전까지 회의 안건을 보내주실 수 있나요?",
+    "input": "voice",
+    "sample": true,
+    "live": true,
+    "speechModel": "transcribe",
+    "original": "Could you send me the meeting agenda by tomorrow?",
+    "language": "en-US",
+    "sourcePending": false,
+    "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+    "liveFirstSourceStreamMs": 661,
+    "liveLastVoiceStreamMs": 547,
+    "translationBatch": true,
+    "translationPacing": "after-speech",
+    "captureStartedAt": 73307.60000002384,
+    "firstSourceAfterCaptureMs": 2431,
+    "status": "complete",
+    "error": "",
+    "segmentReadyAt": 78072.42000001669,
+    "translationRequestAt": 78072.47500002384,
+    "firstTranslationAfterRequestMs": 1221,
+    "firstTranslationAfterSegmentMs": 1222,
+    "waitMilliseconds": 0,
+    "firstTranslationAfterCaptureMs": 5986,
+    "milliseconds": 3672,
+    "translationCompletedAt": 79409.93500000238,
+    "translationMilliseconds": 1337,
+    "browserUpdates": 12,
+    "firstTranslationDomMs": 5987
+  }
+]
+Speech
+[]
+Replies
+[
+  {
+    "ko": "내일 안건을 확정하기 전에 논의해야 할 필수 항목이 더 있습니까?",
+    "en": "Are there any additional mandatory items to discuss before finalizing the agenda tomorrow?",
+    "sourceId": "6c470dd3-c0a3-4e2d-bb5f-1e7d9377198a",
+    "sourceAt": 1795017195508
+  },
+  {
+    "ko": "계약 검토 상태와 보안 검토 확인도 내일 안건에 포함해야 합니까?",
+    "en": "Should the contract review status and security review confirmation also be included in tomorrow's agenda?",
+    "sourceId": "6c470dd3-c0a3-4e2d-bb5f-1e7d9377198a",
+    "sourceAt": 1795017195508
+  }
+]

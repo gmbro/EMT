@@ -1,0 +1,59 @@
+{
+  "synthetic": true,
+  "checkedAt": "2026-11-18T15:49:41.274Z",
+  "cases": [
+    {
+      "id": "negation",
+      "text": "We have not approved the contract. The deposit is $25,000, not $250,000. Please send the revised schedule by tomorrow.",
+      "language": "en-US",
+      "context": "Contract review meeting."
+    }
+  ],
+  "rows": [
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "negation",
+      "firstTokenMs": 1530,
+      "totalMs": 1674,
+      "complete": true,
+      "text": "계약은 아직 승인하지 않았습니다. 보증금은 25만 달러가 아니라 2만 5천 달러입니다. 내일까지 수정된 일정을 보내주세요.",
+      "usage": {
+        "total_input_tokens": 210,
+        "total_output_tokens": 42,
+        "total_thought_tokens": 0,
+        "total_tokens": 252
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "negation",
+      "firstTokenMs": 2066,
+      "totalMs": 2407,
+      "complete": true,
+      "text": "저희는 계약을 승인하지 않았습니다. 보증금은 250,000달러가 아니라 25,000달러입니다. 수정된 일정을 내일까지 보내 주시기 바랍니다.",
+      "usage": {
+        "total_input_tokens": 210,
+        "total_output_tokens": 49,
+        "total_thought_tokens": 0,
+        "total_tokens": 259
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "negation",
+      "firstTokenMs": 2349,
+      "totalMs": 2547,
+      "complete": true,
+      "text": "저희는 계약을 승인하지 않았습니다. 계약금은 25만 달러가 아니라 2만 5천 달러입니다. 수정된 일정을 내일까지 보내 주시기 바랍니다.",
+      "usage": {
+        "total_input_tokens": 210,
+        "total_output_tokens": 43,
+        "total_thought_tokens": 0,
+        "total_tokens": 253
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+Meeting verification (synthetic fixtures only)
+Transcript onlyPreparePrepare warm connectionEnglish sampleKorean sampleBilingual single connectionConcurrent sample and speechGuideKorean own voice sampleSynthetic two sentence meetingQuestion without punctuationQuestion during cooldownCheck IndexedDB migration and long archiveCreate business review meetingCreate synthetic 2000-row meeting
+
+ready · pending 0 · idle · composer idle
+
+Store check
+null
+
+Records
+[
+  {
+    "id": "fdc866a5-a303-4a97-88bb-e26180f5992a",
+    "original": "We have not approved the contract. Could you confirm whether security review is included?",
+    "translation": "저희는 아직 계약을 승인하지 않았습니다. 보안 검토가 포함되어 있는지 확인해 주실 수 있나요?",
+    "language": "en-US",
+    "duration": 0,
+    "sample": false,
+    "input": "text",
+    "status": "complete",
+    "error": "",
+    "startedAt": 41451.14500004053,
+    "createdAt": 1795017161221,
+    "segmentReadyAt": 41451.94999998808,
+    "translationRequestAt": 41452.92500001192,
+    "firstTranslationAfterRequestMs": 732,
+    "firstTranslationAfterSegmentMs": 733,
+    "waitMilliseconds": 1,
+    "milliseconds": 838,
+    "translationCompletedAt": 42289.064999997616,
+    "translationMilliseconds": 836,
+    "browserUpdates": 6
+  }
+]
+Speech
+[]
+Replies
+[
+  {
+    "ko": "현재 계약 조건에 보안 검토 항목이 포함되어 있는지 확인해 주실 수 있나요?",
+    "en": "Could you clarify whether security review items are included in the current contract terms?",
+    "sourceId": "fdc866a5-a303-4a97-88bb-e26180f5992a",
+    "sourceAt": 1795017161221
+  },
+  {
+    "ko": "해당 보안 검토의 구체적인 범위가 어떻게 설정되어 있는지 말씀해 주시겠습니까?",
+    "en": "Could you share what the specific scope of that security review covers?",
+    "sourceId": "fdc866a5-a303-4a97-88bb-e26180f5992a",
+    "sourceAt": 1795017161221
+  }
+]

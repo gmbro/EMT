@@ -1,0 +1,551 @@
+{
+  "synthetic": true,
+  "checkedAt": "2026-11-18T15:50:46.727Z",
+  "cases": [
+    {
+      "id": "en-negation-commitments",
+      "text": "We have not approved the contract. We have not promised to sign it this week, and we have not agreed to automatic renewal.",
+      "language": "en-US",
+      "context": "The supplier is asking whether the contract can proceed.",
+      "glossary": "automatic renewal = 자동 갱신",
+      "semanticChecks": [
+        "Preserve all three explicit denials: approval, signing this week, and automatic renewal.",
+        "Do not soften factual denials into uncertainty or manufacture future commitments."
+      ],
+      "mustInclude": [
+        "승인",
+        "이번\\s*주",
+        "(서명|체결)",
+        "자동\\s*(갱신|연장)",
+        "(않|없|아니)"
+      ],
+      "mustNotInclude": [
+        "승인했(습니다|어요)",
+        "서명하겠",
+        "체결하겠"
+      ]
+    },
+    {
+      "id": "en-time-boundaries",
+      "text": "Do not send the revised proposal today. Please send it tomorrow after 3 p.m. and before 5 p.m., Korea time.",
+      "language": "en-US",
+      "context": "The previous proposal must remain unchanged until tomorrow's review.",
+      "glossary": "revised proposal = 수정 제안서",
+      "semanticChecks": [
+        "Today is prohibited; tomorrow is the requested delivery day.",
+        "Preserve both strict time boundaries: after 3 p.m. and before 5 p.m., in Korea time."
+      ],
+      "mustInclude": [
+        "오늘",
+        "내일",
+        "(3시|세\\s*시).{0,15}(이후|후|지나)",
+        "(5시|다섯\\s*시).{0,15}(이전|전)",
+        "한국\\s*시간"
+      ],
+      "mustNotInclude": [
+        "오늘.{0,12}(보내\\s*주세요|전송해\\s*주세요)",
+        "(3시|세\\s*시)\\s*전",
+        "(5시|다섯\\s*시)\\s*후"
+      ]
+    },
+    {
+      "id": "en-money-units",
+      "text": "The total price is US$125,000, excluding tax. It covers 100 units delivered each week for five weeks; it is not 100 units in total.",
+      "language": "en-US",
+      "context": "The parties are checking the quantity and price in a draft order.",
+      "glossary": "unit = 개; excluding tax = 세금 별도",
+      "semanticChecks": [
+        "Preserve USD 125,000 and tax exclusion.",
+        "Preserve 100 units per week for five weeks, not 100 units total. Do not drop or invert the correction."
+      ],
+      "mustInclude": [
+        "(125,?000|12만\\s*5천|12만\\s*5000)",
+        "(달러|USD|US\\$)",
+        "(세금|세액|부가세)",
+        "(5주|다섯\\s*주)",
+        "(매주|주당|주마다)",
+        "100\\s*개",
+        "(않|아니)"
+      ],
+      "mustNotInclude": [
+        "세금\\s*포함",
+        "총\\s*100개입니다"
+      ]
+    },
+    {
+      "id": "en-deposit-distinction",
+      "text": "The $500 contract deposit is an advance payment toward the purchase price. The separate $2,000 security deposit is refundable when the equipment is returned undamaged.",
+      "language": "en-US",
+      "context": "An equipment purchase agreement includes a temporary equipment loan.",
+      "glossary": "contract deposit = 계약금; security deposit = 보증금",
+      "semanticChecks": [
+        "Distinguish the $500 contract advance payment from the separate $2,000 security deposit.",
+        "Only the security deposit has the stated refund condition: equipment returned without damage. Do not invent refund terms for the contract deposit."
+      ],
+      "mustInclude": [
+        "500\\s*달러.{0,20}계약금|계약금.{0,20}500\\s*달러",
+        "2,?000\\s*달러.{0,20}보증금|보증금.{0,20}2,?000\\s*달러",
+        "(환불|반환)",
+        "(손상|파손|훼손)"
+      ],
+      "mustNotInclude": [
+        "500\\s*달러.{0,10}보증금",
+        "2,?000\\s*달러.{0,10}계약금",
+        "계약금.{0,8}(환불|반환)됩니다"
+      ]
+    },
+    {
+      "id": "en-conditional-approval",
+      "text": "We could consider approval only if the security review has passed and the scope remains unchanged. That does not mean the review is complete or that approval is guaranteed.",
+      "language": "en-US",
+      "context": "The vendor has requested approval today. No review result has been supplied.",
+      "glossary": "security review = 보안 검토; scope = 범위",
+      "semanticChecks": [
+        "Keep both prerequisites and the tentative possibility of considering approval.",
+        "Do not assert that the review has passed, approval is guaranteed, or the user promises approval after review."
+      ],
+      "mustInclude": [
+        "보안\\s*검토",
+        "범위",
+        "(검토|고려).{0,15}(수\\s*있|가능)",
+        "보장.{0,15}(않|아니|없)"
+      ],
+      "mustNotInclude": [
+        "승인하겠",
+        "승인해\\s*드리겠",
+        "검토가\\s*완료되었습니다",
+        "검토를\\s*통과했습니다"
+      ]
+    },
+    {
+      "id": "en-uncertain-estimate",
+      "text": "Our current estimate is 14 days, but testing may take three additional days. This is an estimate, not a confirmed delivery date. Could you clarify whether weekends count?",
+      "language": "en-US",
+      "context": "A delivery schedule is being discussed, with no signed deadline.",
+      "glossary": "estimate = 예상; confirmed delivery date = 확정 납기일",
+      "semanticChecks": [
+        "Preserve the 14-day estimate and the possibility of three extra testing days.",
+        "Keep the unconfirmed status and the question about whether weekends count. Do not convert an estimate into a promise."
+      ],
+      "mustInclude": [
+        "14일",
+        "(3일|사흘)",
+        "추가",
+        "주말",
+        "(예상|추정|견적)",
+        "확정.{0,20}(않|아니|없)"
+      ],
+      "mustNotInclude": [
+        "14일\\s*내에.{0,12}(완료하겠|납품하겠)",
+        "납기일은\\s*확정되었습니다"
+      ]
+    },
+    {
+      "id": "ko-denial-before-review",
+      "text": "아직 계약을 승인하지 않았습니다. 보안 검토가 끝나기 전에는 시작일을 확정할 수 없습니다. 이 조건은 내일까지 유효합니다.",
+      "language": "ko-KR",
+      "context": "A supplier has asked whether work can start today.",
+      "glossary": "보안 검토 = security review; 시작일 = start date",
+      "semanticChecks": [
+        "Translate the actual lack of approval as a fact, not a possibility.",
+        "The start date cannot be confirmed before security review is complete. Preserve the condition remaining valid until tomorrow."
+      ],
+      "mustInclude": [
+        "(have not|haven't|has not|hasn't|not yet).{0,30}approv|not.{0,12}approved",
+        "(cannot|can't|unable).{0,35}(confirm|finaliz|set)",
+        "security review",
+        "tomorrow"
+      ],
+      "mustNotInclude": [
+        "we have approved",
+        "we will approve",
+        "we can confirm the start date today"
+      ]
+    },
+    {
+      "id": "ko-polite-intent",
+      "text": "검토 시간을 조금 더 주실 수 있을까요? 가능하다면 답변 기한을 다음 주 금요일로 연장하고 싶습니다. 지금 제안에 동의한다는 뜻은 아닙니다.",
+      "language": "ko-KR",
+      "context": "The other party has proposed a commercial agreement. The speaker is requesting more time, not accepting it.",
+      "glossary": "답변 기한 = response deadline",
+      "semanticChecks": [
+        "Use a polite, easy-to-say request for more review time and a tentative extension to next Friday.",
+        "Keep the explicit distinction between requesting time and agreeing to the proposal. Do not add a promise to respond or approve."
+      ],
+      "mustInclude": [
+        "(could|would|may|please)",
+        "(review|consider)",
+        "next (week.{0,6})?friday|friday of next week",
+        "(not|doesn't|isn't|don't|haven't|does not|is not).{0,35}(agree|accept)|not.{0,12}agreeing"
+      ],
+      "mustNotInclude": [
+        "we agree to the proposal",
+        "we accept the proposal",
+        "we will approve",
+        "we will respond by"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-negation-commitments",
+      "firstTokenMs": 1117,
+      "totalMs": 1163,
+      "complete": true,
+      "text": "저희는 계약을 승인하지 않았습니다. 이번 주에 서명하기로 약속한 적도 없고, 자동 갱신에도 동의하지 않았습니다.",
+      "usage": {
+        "total_input_tokens": 214,
+        "total_output_tokens": 36,
+        "total_thought_tokens": 0,
+        "total_tokens": 250
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-negation-commitments",
+      "firstTokenMs": 1202,
+      "totalMs": 1440,
+      "complete": true,
+      "text": "저희는 계약을 승인하지 않았습니다. 이번 주에 서명하겠다고 약속한 적도 없으며, 자동 갱신에 동의하지도 않았습니다.",
+      "usage": {
+        "total_input_tokens": 214,
+        "total_output_tokens": 39,
+        "total_thought_tokens": 0,
+        "total_tokens": 253
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-negation-commitments",
+      "firstTokenMs": 1888,
+      "totalMs": 2183,
+      "complete": true,
+      "text": "저희는 계약을 승인하지 않았습니다. 이번 주에 서명하겠다고 약속한 적도 없으며, 자동 갱신에도 동의하지 않았습니다.",
+      "usage": {
+        "total_input_tokens": 214,
+        "total_output_tokens": 38,
+        "total_thought_tokens": 0,
+        "total_tokens": 252
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-time-boundaries",
+      "firstTokenMs": 608,
+      "totalMs": 750,
+      "complete": true,
+      "text": "수정 제안서는 오늘 보내지 마세요. 내일 한국 시간으로 오후 3시 이후, 오후 5시 이전에 보내 주시기 바랍니다.",
+      "usage": {
+        "total_input_tokens": 221,
+        "total_output_tokens": 33,
+        "total_thought_tokens": 0,
+        "total_tokens": 254
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-time-boundaries",
+      "firstTokenMs": 1449,
+      "totalMs": 1698,
+      "complete": true,
+      "text": "오늘 수정 제안서를 보내지 마세요. 한국 시간으로 내일 오후 3시 이후에서 오후 5시 사이에 보내 주시기 바랍니다.",
+      "usage": {
+        "total_input_tokens": 221,
+        "total_output_tokens": 31,
+        "total_thought_tokens": 0,
+        "total_tokens": 252
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-time-boundaries",
+      "firstTokenMs": 1769,
+      "totalMs": 1825,
+      "complete": true,
+      "text": "수정 제안서는 오늘 보내지 마세요. 한국 시간으로 내일 오후 3시 이후, 오후 5시 이전에 보내 주시기 바랍니다.",
+      "usage": {
+        "total_input_tokens": 221,
+        "total_output_tokens": 33,
+        "total_thought_tokens": 0,
+        "total_tokens": 254
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-money-units",
+      "firstTokenMs": 572,
+      "totalMs": 792,
+      "complete": true,
+      "text": "총액은 세금 별도로 미화 125,000달러입니다. 총 100개가 아니라, 5주 동안 매주 100개씩 납품하는 조건입니다.",
+      "usage": {
+        "total_input_tokens": 237,
+        "total_output_tokens": 47,
+        "total_thought_tokens": 0,
+        "total_tokens": 284
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-money-units",
+      "firstTokenMs": 898,
+      "totalMs": 1316,
+      "complete": true,
+      "text": "총액은 세금 별도로 미화 125,000달러입니다. 이는 5주 동안 매주 100개씩 인도되는 분량이며, 총 100개가 아닙니다.",
+      "usage": {
+        "total_input_tokens": 237,
+        "total_output_tokens": 49,
+        "total_thought_tokens": 0,
+        "total_tokens": 286
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-money-units",
+      "firstTokenMs": 3230,
+      "totalMs": 3533,
+      "complete": true,
+      "text": "총 금액은 세금 별도로 미화 125,000달러입니다. 이는 5주 동안 매주 100개씩 납품되는 것을 포함하며, 총 100개가 아닙니다.",
+      "usage": {
+        "total_input_tokens": 237,
+        "total_output_tokens": 50,
+        "total_thought_tokens": 0,
+        "total_tokens": 287
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-deposit-distinction",
+      "firstTokenMs": 933,
+      "totalMs": 1086,
+      "complete": true,
+      "text": "500달러의 계약금은 구매 대금의 선급금입니다. 별도의 2,000달러 보증금은 장비를 파손 없이 반환할 때 환불됩니다.",
+      "usage": {
+        "total_input_tokens": 228,
+        "total_output_tokens": 45,
+        "total_thought_tokens": 0,
+        "total_tokens": 273
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-deposit-distinction",
+      "firstTokenMs": 1102,
+      "totalMs": 1455,
+      "complete": true,
+      "text": "$500의 계약금은 구매 대금에 대한 선납금입니다. 별도의 $2,000 보증금은 장비가 손상되지 않은 상태로 반납될 때 환불됩니다.",
+      "usage": {
+        "total_input_tokens": 228,
+        "total_output_tokens": 47,
+        "total_thought_tokens": 0,
+        "total_tokens": 275
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-deposit-distinction",
+      "firstTokenMs": 2418,
+      "totalMs": 2694,
+      "complete": true,
+      "text": "500달러의 계약금은 구매 대금의 선급금입니다. 별도의 2,000달러 보증금은 장비가 파손 없이 반납될 때 환불 가능합니다.",
+      "usage": {
+        "total_input_tokens": 228,
+        "total_output_tokens": 47,
+        "total_thought_tokens": 0,
+        "total_tokens": 275
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-conditional-approval",
+      "firstTokenMs": 706,
+      "totalMs": 871,
+      "complete": true,
+      "text": "보안 검토를 통과하고 범위에 변동이 없는 경우에만 승인을 고려할 수 있습니다. 그렇다고 검토가 완료되었거나 승인이 보장된다는 뜻은 아닙니다.",
+      "usage": {
+        "total_input_tokens": 226,
+        "total_output_tokens": 43,
+        "total_thought_tokens": 0,
+        "total_tokens": 269
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-conditional-approval",
+      "firstTokenMs": 914,
+      "totalMs": 1185,
+      "complete": true,
+      "text": "보안 검토를 통과하고 범위가 변경되지 않은 경우에만 승인을 고려할 수 있습니다. 그렇다고 해서 검토가 완료되었다거나 승인이 보장된다는 뜻은 아닙니다.",
+      "usage": {
+        "total_input_tokens": 226,
+        "total_output_tokens": 43,
+        "total_thought_tokens": 0,
+        "total_tokens": 269
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-conditional-approval",
+      "firstTokenMs": 1814,
+      "totalMs": 2071,
+      "complete": true,
+      "text": "보안 검토를 통과하고 범위가 변경되지 않은 경우에만 승인을 고려해 볼 수 있습니다. 그렇다고 해서 검토가 완료되었다거나 승인이 보장된다는 뜻은 아닙니다.",
+      "usage": {
+        "total_input_tokens": 226,
+        "total_output_tokens": 44,
+        "total_thought_tokens": 0,
+        "total_tokens": 270
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "en-uncertain-estimate",
+      "firstTokenMs": 763,
+      "totalMs": 1133,
+      "complete": true,
+      "text": "현재 예상은 14일이지만, 테스트에 3일이 더 소요될 수 있습니다. 이는 예상일 뿐이며 확정 납기일이 아닙니다. 주말이 포함되는지 확인해 주시겠습니까?",
+      "usage": {
+        "total_input_tokens": 231,
+        "total_output_tokens": 49,
+        "total_thought_tokens": 0,
+        "total_tokens": 280
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "en-uncertain-estimate",
+      "firstTokenMs": 1418,
+      "totalMs": 1541,
+      "complete": true,
+      "text": "현재 예상 기간은 14일이지만, 테스트에 3일이 추가로 소요될 수 있습니다. 이는 예상일뿐, 확정 납기일은 아닙니다. 주말이 포함되는지 확인해 주시겠어요?",
+      "usage": {
+        "total_input_tokens": 231,
+        "total_output_tokens": 51,
+        "total_thought_tokens": 0,
+        "total_tokens": 282
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "en-uncertain-estimate",
+      "firstTokenMs": 2035,
+      "totalMs": 2355,
+      "complete": true,
+      "text": "현재 저희 예상은 14일이지만, 테스트에 3일이 추가로 소요될 수 있습니다. 이는 예상일 뿐이며 확정 납기일은 아닙니다. 주말이 포함되는지 명확히 해 주실 수 있나요?",
+      "usage": {
+        "total_input_tokens": 231,
+        "total_output_tokens": 54,
+        "total_thought_tokens": 0,
+        "total_tokens": 285
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "ko-denial-before-review",
+      "firstTokenMs": 412,
+      "totalMs": 632,
+      "complete": true,
+      "text": "We haven't approved the contract yet. We cannot confirm the start date before the security review is finished. This condition is valid until tomorrow.",
+      "usage": {
+        "total_input_tokens": 229,
+        "total_output_tokens": 29,
+        "total_thought_tokens": 0,
+        "total_tokens": 258
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "ko-denial-before-review",
+      "firstTokenMs": 1151,
+      "totalMs": 1326,
+      "complete": true,
+      "text": "We have not approved the contract yet. We cannot confirm the start date before the security review is completed. This condition is valid until tomorrow.",
+      "usage": {
+        "total_input_tokens": 229,
+        "total_output_tokens": 28,
+        "total_thought_tokens": 0,
+        "total_tokens": 257
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "ko-denial-before-review",
+      "firstTokenMs": 1820,
+      "totalMs": 1959,
+      "complete": true,
+      "text": "We haven't approved the contract yet. We cannot confirm the start date until the security review is complete. This condition remains valid until tomorrow.",
+      "usage": {
+        "total_input_tokens": 229,
+        "total_output_tokens": 29,
+        "total_thought_tokens": 0,
+        "total_tokens": 258
+      }
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "thinking": "minimal",
+      "id": "ko-polite-intent",
+      "firstTokenMs": 971,
+      "totalMs": 1288,
+      "complete": true,
+      "text": "Could you please give us a little more time for review? If possible, I would like to extend the response deadline to next Friday. This does not mean I agree to the proposal right now.",
+      "usage": {
+        "total_input_tokens": 238,
+        "total_output_tokens": 39,
+        "total_thought_tokens": 0,
+        "total_tokens": 277
+      }
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "thinking": "minimal",
+      "id": "ko-polite-intent",
+      "firstTokenMs": 1421,
+      "totalMs": 1567,
+      "complete": true,
+      "text": "Could you give me a little more time to review this? If possible, I'd like to extend the response deadline to next Friday. This does not mean I am agreeing to the proposal right now.",
+      "usage": {
+        "total_input_tokens": 238,
+        "total_output_tokens": 41,
+        "total_thought_tokens": 0,
+        "total_tokens": 279
+      }
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "thinking": "low",
+      "id": "ko-polite-intent",
+      "firstTokenMs": 2334,
+      "totalMs": 2454,
+      "complete": true,
+      "text": "Could you give us a little more time to review this? If possible, we would like to extend the response deadline to next Friday. This does not mean we are agreeing to the proposal right now.",
+      "usage": {
+        "total_input_tokens": 238,
+        "total_output_tokens": 40,
+        "total_thought_tokens": 0,
+        "total_tokens": 278
+      }
+    }
+  ]
+}

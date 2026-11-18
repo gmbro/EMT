@@ -15,6 +15,7 @@ import { createMeetingStore, ARCHIVE_EVENT_KEY } from './meeting-store.mjs';
 import { translateCloud } from './cloud-translation.mjs';
 import { createDraftTranslator } from './draft-translator.mjs';
 import { createTaskPool } from './task-pool.mjs';
+import { createTranslationPublication } from './translation-publication.mjs';
 import { translationChunks } from './translation-chunks.mjs';
 import { createReplyScheduler } from './reply-scheduler.mjs';
 import { meetingContext } from './meeting-context.mjs';
@@ -405,20 +406,31 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     if (translationJobs.current.has(job)) return translationQueue.current;
     translationJobs.current.add(job); syncPending();
     const queuedAt = performance.now(), requestSignal=sessionController.current.signal;
+    updateRecord(record.id, { segmentReadyAt:queuedAt, translationRequestAt:undefined, firstTranslationAfterRequestMs:undefined, firstTranslationAfterSegmentMs:undefined });
     const valid=()=>session===epoch.current&&alive.current&&historyRef.current.records.some(r=>r.id===record.id&&r.original===record.original);
     const task = translationPool.current.run(async () => {
       if (session !== epoch.current || !alive.current) return;
       updateRecord(record.id, { status: 'translating', error: '' });
-      const started = performance.now();
+      let started;
       try {
         const inFlight=previewTasks.current.get(record.id);
         if(inFlight?.text===record.original && inFlight.glossary===glossaryRef.current) await inFlight.promise.catch(()=>{});
         if(!valid()||requestSignal.aborted)return;
         const previous=historyRef.current.records.find(r=>r.id===record.id)?.translation;
-        let recovering=Boolean(previous);
+        const publication=createTranslationPublication(previous);
+        started=performance.now();
+        updateRecord(record.id,{translationRequestAt:started,waitMilliseconds:Math.round(started-queuedAt)});
         const result = await currentEngine.translate(english, 'en-US', { ...callbacks, retries:Math.max(0,2-(record.autoAttempts||0)), signal:requestSignal, context:stableContext(record), glossary: glossaryRef.current,
-          onRetry:({attempt})=>{recovering=true;if(valid())updateRecord(record.id,{status:'recovering',retryAttempt:attempt,autoAttempts:(record.autoAttempts||0)+attempt});},
-          onText: text => { if (!recovering && valid() && typeof text === 'string') {const row=historyRef.current.records.find(row=>row.id===record.id);updateRecord(record.id, { translation: text,...(row?.captureStartedAt?{firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(performance.now()-row.captureStartedAt)}:{}) });} },
+          onRetry:({attempt})=>{publication.retry();if(valid())updateRecord(record.id,{status:'recovering',retryAttempt:attempt,autoAttempts:(record.autoAttempts||0)+attempt});},
+          onText: text => {
+            if(!valid()||!publication.accept(text))return;
+            const row=historyRef.current.records.find(r=>r.id===record.id),publishedAt=performance.now();
+            updateRecord(record.id, { translation:text,status:'translating',
+              firstTranslationAfterRequestMs:row.firstTranslationAfterRequestMs??Math.round(publishedAt-started),
+              firstTranslationAfterSegmentMs:row.firstTranslationAfterSegmentMs??Math.round(publishedAt-queuedAt),
+              ...(Number.isFinite(row.captureStartedAt)?{firstTranslationAfterCaptureMs:row.firstTranslationAfterCaptureMs??Math.round(publishedAt-row.captureStartedAt)}:{}),
+            });
+          },
         });
         if (!valid()) return;
         if (!result.text?.trim()) throw new Error('번역 결과가 비어 있어요. 이 문장을 다시 번역해 주세요.');

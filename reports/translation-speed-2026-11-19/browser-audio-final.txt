@@ -1,0 +1,61 @@
+Meeting verification (synthetic fixtures only)
+Transcript onlyPreparePrepare warm connectionEnglish sampleKorean sampleBilingual single connectionConcurrent sample and speechGuideKorean own voice sampleSynthetic two sentence meetingQuestion without punctuationQuestion during cooldownCheck IndexedDB migration and long archiveCreate business review meetingCreate synthetic 2000-row meeting
+
+ready · pending 0 · idle · composer idle
+
+Store check
+null
+
+Records
+[
+  {
+    "id": "15f6ffa4-f166-4737-8831-83f481a990fd",
+    "createdAt": 1795017342434,
+    "startedAt": 29134.02999997139,
+    "translation": "회의 안건을 내일까지 보내주시겠어요?",
+    "input": "voice",
+    "sample": true,
+    "live": true,
+    "speechModel": "transcribe",
+    "original": "Could you send me the meeting agenda by tomorrow?",
+    "language": "en-US",
+    "sourcePending": false,
+    "stableOriginal": "Could you send me the meeting agenda by tomorrow?",
+    "liveFirstSourceStreamMs": 404,
+    "liveLastVoiceStreamMs": 343,
+    "translationBatch": true,
+    "translationPacing": "after-speech",
+    "captureStartedAt": 26884.194999992847,
+    "firstSourceAfterCaptureMs": 2250,
+    "status": "complete",
+    "error": "",
+    "segmentReadyAt": 31648.814999997616,
+    "translationRequestAt": 31648.989999949932,
+    "firstTranslationAfterRequestMs": 773,
+    "firstTranslationAfterSegmentMs": 773,
+    "waitMilliseconds": 0,
+    "firstTranslationAfterCaptureMs": 5538,
+    "milliseconds": 3374,
+    "translationCompletedAt": 32507.57999998331,
+    "translationMilliseconds": 859,
+    "browserUpdates": 12,
+    "firstTranslationDomMs": 5539
+  }
+]
+Speech
+[]
+Replies
+[
+  {
+    "ko": "내일 몇 시까지 전달해 드리면 될까요? 포함해야 할 특정 항목이 있는지도 확인 부탁드립니다.",
+    "en": "By what time tomorrow would you need it? Please also let me know if there are specific items to include.",
+    "sourceId": "15f6ffa4-f166-4737-8831-83f481a990fd",
+    "sourceAt": 1795017342434
+  },
+  {
+    "ko": "내일 일정에 맞추려면 오늘 다뤄야 할 핵심 안건이 먼저 확정되어야 하나요?",
+    "en": "In order to meet tomorrow's timeline, do the key agenda topics need to be confirmed today first?",
+    "sourceId": "15f6ffa4-f166-4737-8831-83f481a990fd",
+    "sourceAt": 1795017342434
+  }
+]
