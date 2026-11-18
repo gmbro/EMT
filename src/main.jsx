@@ -7,7 +7,6 @@ import { useMeeting } from './useMeeting.js';
 import './styles.css';
 import './maestra.css';
 import {meetingSummary} from './meeting-summary.mjs';
-import {meetingExport} from './meeting-export.mjs';
 import {createTranscriptView,transcriptMountWindow,prependTranscriptWindow} from './transcript-view.mjs';
 
 
@@ -278,7 +277,7 @@ function App(){
    }catch{notify('회의 기록을 열지 못했습니다. 다시 시도해 주세요.');}
    finally{openingHistoryRef.current=false;setOpeningHistory(null);}
  };
- const download=async()=>{setExportBusy(true);try{const blob=await meetingExport(meeting,exportOptions),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`미팅-${new Date(meeting.activeSessionDate).toLocaleDateString('sv-SE')}.${exportOptions.format}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('파일을 내보냈습니다');setExportOpen(false);}catch{notify('파일 생성에 실패했습니다. 다시 시도해 주세요.');}finally{setExportBusy(false);}};
+ const download=async()=>{setExportBusy(true);try{const {meetingExport}=await import('./meeting-export.mjs');const blob=await meetingExport(meeting,exportOptions),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`미팅-${new Date(meeting.activeSessionDate).toLocaleDateString('sv-SE')}.${exportOptions.format}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('파일을 내보냈습니다');setExportOpen(false);}catch{notify('파일 생성에 실패했습니다. 다시 시도해 주세요.');}finally{setExportBusy(false);}};
  return <div className={`maestra-app ${screen==='setup'?'setup-view':''}`} style={{'--caption-size':`${size}px`}}>
  {screen==='history'?<main className="archive-home">
    <div className="archive-content">

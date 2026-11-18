@@ -18,6 +18,37 @@ async function scenario(run) {
   try { await run(engine,calls); } finally { engine.destroy();globalThis.fetch=originalFetch; }
 }
 
+test('record-button setup and first cloud translation require just the translation POST', async () => {
+  await scenario(async (engine, calls) => {
+    await engine.prepare('en-US', { verifyTranslation: false });
+    assert.equal(calls.length, 0);
+    const pending = engine.translate('Please send it by Friday.', 'en-US');
+    await tick();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].body.text, 'Please send it by Friday.');
+    calls[0].complete('금요일까지 보내 주세요.');
+    assert.equal((await pending).text, '금요일까지 보내 주세요.');
+  });
+});
+
+test('cached previews preserve surrounding paragraph context and a whole-result hit wins', async () => {
+  await scenario(async (engine, calls) => {
+    const preview = 'The review is complete.';
+    const tail = 'We have not approved the budget.\nIt still requires a signature. Please confirm.';
+    const source = preview + ' ' + tail;
+    const seed = engine.translateDraft(preview, 'en-US');
+    await tick(); calls[0].complete('검토가 끝났습니다.'); await seed;
+    const result = engine.translate(source, 'en-US');
+    await tick();
+    assert.deepEqual(calls.map(call => call.body.text), [preview, tail]);
+    calls[1].complete('예산은 아직 승인되지 않았습니다.'); await result;
+    const whole = engine.translateDraft(source, 'en-US');
+    await tick(); calls[2].complete('문단 전체 번역'); await whole;
+    assert.equal((await engine.translate(source, 'en-US')).text, '문단 전체 번역');
+    assert.equal(calls.length, 3);
+  });
+});
+
 test('identical simultaneous translations make one paid request and late subscribers receive current text',async()=>{
   await scenario(async(engine,calls)=>{
     const first=[],second=[],late=[];

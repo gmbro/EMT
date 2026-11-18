@@ -12,11 +12,12 @@ export function exportLines(meeting,{content='both',timestamps=true,guides=false
  return lines;
 }
 export async function meetingExport(meeting,options={}){
- const lines=exportLines(meeting,options),format=options.format||'txt';
+ const format=options.format||'txt';
+ if(format==='json')return new Blob([JSON.stringify({version:1,date:meeting.activeSessionDate,records:meeting.records.map(r=>({id:r.id,...(r.speakerId?{speakerId:r.speakerId}:{}),...(options.timestamps===false?{}:{createdAt:r.createdAt}),language:r.language,...(options.content!=='translation'?{original:r.original}:{}),...(options.content!=='original'?{translation:r.language==='ko-KR'?(r.translation||r.original):r.translation,status:r.status}:{} )})),...(options.guides?{replies:meeting.replies}:{}),...(options.speeches?{speeches:meeting.speeches}:{})},null,2)],{type:'application/json'});
+ const lines=exportLines(meeting,options);
  if(format==='docx'){
   const {Document,Packer,Paragraph,TextRun}=await import('docx');
   return Packer.toBlob(new Document({sections:[{children:lines.map(text=>new Paragraph({children:[new TextRun({text,size:22,font:'Arial'})],spacing:{after:100}}))}]}));
  }
- if(format==='json')return new Blob([JSON.stringify({version:1,date:meeting.activeSessionDate,records:meeting.records.map(r=>({id:r.id,...(r.speakerId?{speakerId:r.speakerId}:{}),...(options.timestamps===false?{}:{createdAt:r.createdAt}),language:r.language,...(options.content!=='translation'?{original:r.original}:{}),...(options.content!=='original'?{translation:r.language==='ko-KR'?(r.translation||r.original):r.translation,status:r.status}:{} )})),...(options.guides?{replies:meeting.replies}:{}),...(options.speeches?{speeches:meeting.speeches}:{})},null,2)],{type:'application/json'});
  return new Blob(['\ufeff'+lines.join('\n')],{type:'text/plain;charset=utf-8'});
 }

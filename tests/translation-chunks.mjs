@@ -20,6 +20,33 @@ test('no-space languages and a long single word are still bounded', () => {
   }
 });
 
+test('cloud chunks satisfy both the model character limit and the API UTF-16 limit without splitting a pair', () => {
+  for (const source of ['😀'.repeat(1199), ('Please verify the total. 😀' + '𠮷'.repeat(950)).repeat(3)]) {
+    const chunks = translationChunks(source, 1200, 1800);
+    assert.equal(chunks.join(''), source);
+    assert.ok(chunks.every(chunk => !/[\uD800-\uDFFF]/u.test(chunk) && chunk.length <= 1800 && [...chunk].length <= 1200));
+  }
+  assert.equal(translationChunks('😀'.repeat(1200), 1200).length, 1);
+  assert.deepEqual(translationChunks('😀abc', 99, 2), ['😀', 'ab', 'c']);
+  assert.throws(() => translationChunks('😀', 10, 1), RangeError);
+});
+
+test('a movable request boundary keeps a negation, deadline, amount or titled name with its meaning', () => {
+  const cases = [
+    ['For this project we have not approved the budget yet.', 'not ', 'not approved'],
+    ['Our company expects delivery in 15 business days.', '15 ', '15 business days'],
+    ['A detailed review was requested by Dr. Lee and Ms. Kim.', 'Dr. ', 'Dr. Lee'],
+    ['Our renewal agreement is effective by Friday at noon.', 'by ', 'by Friday'],
+  ];
+  for (const [source, cutoff, phrase] of cases) {
+    const limit = source.indexOf(cutoff) + cutoff.length;
+    const chunks = translationChunks(source, limit);
+    assert.equal(chunks.join(''), source);
+    assert.ok(chunks.every(chunk => chunk.length <= limit));
+    assert.ok(chunks.some(chunk => chunk.includes(phrase)), phrase);
+  }
+});
+
 test('all long-text translation chunks stream into the same cumulative output', async () => {
   const engine = new MeetingEngine({ translationMode: 'local' });
   const input = 'Please send the meeting notes. '.repeat(150);

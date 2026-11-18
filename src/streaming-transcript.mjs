@@ -72,6 +72,18 @@ export function createStreamingTranscript({onUpdate,onFinal,onDiscard,sample=fal
 // alone do not warrant a separate translation under Korean speech.
 export function englishForTranslation(original, language) {
  if(!/[가-힣]/u.test(original))return language==='ko-KR'?'':original;
- const passages=original.match(/[A-Za-z0-9][^가-힣ㄱ-ㅎㅏ-ㅣ\n]*/gu)||[];
- return passages.map(part=>part.trim()).filter(part=>language!=='ko-KR'||/\b[A-Za-z]+(?:['’-][a-z]+)?\s+[a-z]+\b/.test(part)).join(' ');
+ const passages = [];
+ for (const part of original.split(/[가-힣ㄱ-ㅎㅏ-ㅣ\n]+/u)) {
+   let start = part.search(/[A-Za-z0-9]/u);
+   if (start < 0) continue;
+   // A leading amount can carry its sign, currency, comparison or accounting
+   // parentheses before the first digit, including in a mixed-language turn.
+   if (/[0-9]/u.test(part[start])) {
+     if (part[start - 1] === '.' && part[start - 2] !== '.') start--;
+     while (start > 0 && /[\s\p{Sc}+−±<>=≤≥≈~(\-]/u.test(part[start - 1])) start--;
+   }
+   const passage = part.slice(start).trim();
+   if (language !== 'ko-KR' || /\b[A-Za-z]+(?:['’-][a-z]+)?\s+[a-z]+\b/.test(passage)) passages.push(passage);
+ }
+ return passages.join(' ');
 }

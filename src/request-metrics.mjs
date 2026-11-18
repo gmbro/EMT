@@ -1,30 +1,63 @@
-// Memory-only diagnostics. Never retain meeting text, audio, keys or request URLs.
+// Memory-only diagnostics. Keep only task names and numeric counters.
 const rows = [];
 const listeners = new Set();
 const audio = new Map();
+const tasks = new Map();
+const emptyRequestTotals = () => ({ requests: 0, unknown: 0, input: 0, output: 0, thought: 0, cached: 0, failures: 0 });
+const totals = emptyRequestTotals();
+const countFields = Object.keys(totals);
+const finite = value => Number.isFinite(value) ? value : 0;
+let oldest = 0;
+
 export function recordAudioUsage(id, metric) {
-  audio.set(id, metric);
-  if(audio.size>200)audio.delete(audio.keys().next().value);
-  for(const listener of listeners)listener();
+  audio.set(id, {
+    capturedSeconds: finite(metric.capturedSeconds), sentSeconds: finite(metric.sentSeconds),
+    reconnections: finite(metric.reconnections), usageReports: finite(metric.usageReports),
+  });
+  if (audio.size > 200) audio.delete(audio.keys().next().value);
+  for (const listener of listeners) listener();
 }
-export function recordRequest(metric) {
-  rows.push({task:metric.task, status:metric.status, code:metric.code, attempt:metric.attempt,
-    milliseconds:metric.milliseconds, firstTokenMs:metric.firstTokenMs, usage:metric.usage || null});
-  if(rows.length>2000) rows.shift();
-  for(const listener of listeners) listener();
-}
-export function usageSummary() {
-  const known = rows.filter(r=>r.usage), tasks = {}, byTask = {};
-  for(const row of rows) {
-    tasks[row.task]=(tasks[row.task]||0)+1;
-    const bucket=byTask[row.task] ||= {requests:0,unknown:0,input:0,output:0,thought:0,cached:0,failures:0};
-    bucket.requests++;bucket.unknown+=row.usage?0:1;bucket.failures+=row.status==='complete'?0:1;
-    for(const [name,field] of [['input','total_input_tokens'],['output','total_output_tokens'],['thought','total_thought_tokens'],['cached','total_cached_tokens']])bucket[name]+=row.usage?.[field]||0;
+
+function addRequest(row, sign) {
+  let bucket = tasks.get(row.task);
+  if (!bucket) {
+    bucket = emptyRequestTotals();
+    tasks.set(row.task, bucket);
   }
-  const audioTotals=[...audio.values()].reduce((sum,row)=>({capturedSeconds:sum.capturedSeconds+row.capturedSeconds,sentSeconds:sum.sentSeconds+row.sentSeconds,reconnections:sum.reconnections+row.reconnections,usageReports:sum.usageReports+row.usageReports}),{capturedSeconds:0,sentSeconds:0,reconnections:0,usageReports:0});
-  return {audio:audioTotals,requests:rows.length, unknown:rows.length-known.length, failures:rows.filter(r=>r.status!=='complete').length,
-    input:known.reduce((n,r)=>n+(r.usage.total_input_tokens||0),0), output:known.reduce((n,r)=>n+(r.usage.total_output_tokens||0),0),
-    thought:known.reduce((n,r)=>n+(r.usage.total_thought_tokens||0),0),
-    cached:known.reduce((n,r)=>n+(r.usage.total_cached_tokens||0),0), tasks, byTask};
+  for (const field of countFields) {
+    const delta = sign * row[field];
+    bucket[field] += delta;
+    totals[field] += delta;
+  }
+  if (!bucket.requests) tasks.delete(row.task);
 }
-export const subscribeUsage = listener => {listeners.add(listener); return ()=>listeners.delete(listener);};
+
+export function recordRequest({ task, status, usage }) {
+  const row = {
+    task, requests: 1, unknown: usage ? 0 : 1, failures: status === 'complete' ? 0 : 1,
+    input: finite(usage?.total_input_tokens), output: finite(usage?.total_output_tokens),
+    thought: finite(usage?.total_thought_tokens), cached: finite(usage?.total_cached_tokens),
+  };
+  if (rows.length === 2000) {
+    addRequest(rows[oldest], -1);
+    rows[oldest] = row;
+    oldest = (oldest + 1) % rows.length;
+  } else rows.push(row);
+  addRequest(row, 1);
+  for (const listener of listeners) listener();
+}
+
+export function usageSummary() {
+  const audioTotals = { capturedSeconds: 0, sentSeconds: 0, reconnections: 0, usageReports: 0 };
+  for (const row of audio.values()) {
+    audioTotals.capturedSeconds += row.capturedSeconds;
+    audioTotals.sentSeconds += row.sentSeconds;
+    audioTotals.reconnections += row.reconnections;
+    audioTotals.usageReports += row.usageReports;
+  }
+  const byTask = Object.fromEntries(Array.from(tasks, ([name, bucket]) => [name, { ...bucket }]));
+  const counts = Object.fromEntries(Array.from(tasks, ([name, bucket]) => [name, bucket.requests]));
+  return { audio: audioTotals, ...totals, tasks: counts, byTask };
+}
+
+export const subscribeUsage = listener => { listeners.add(listener); return () => listeners.delete(listener); };

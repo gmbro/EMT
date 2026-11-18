@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {createStreamingTranscript} from '../src/streaming-transcript.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {createStreamingTranscript, englishForTranslation} from '../src/streaming-transcript.mjs';
 test('speculative revisions replace words without accumulating Hey before a corrected Korean final',()=>{const updates=[],finals=[];const a=createStreamingTranscript({onUpdate:r=>updates.push(r),onFinal:r=>finals.push(r),id:()=> 'one'});a.receive({interimInputTranscription:{text:'Hey'}});a.receive({interimInputTranscription:{text:'회의 일정을'}});a.receive({inputTranscription:{text:'회의 일정을 내일 오후 3시로 변경해 주세요.'}});assert.equal(finals.length,1);assert.equal(finals[0].language,'ko-KR');assert.equal(finals[0].original,'회의 일정을 내일 오후 3시로 변경해 주세요.');assert.equal(updates[0].sourcePending,true);assert.equal(finals[0].sourcePending,false);assert.equal(a.idle,true);});
 test('authoritative English is committed once, a final without interim is retained, and aborted interim stays unconfirmed',()=>{let n=0;const finals=[];const a=createStreamingTranscript({onUpdate:()=>{},onFinal:r=>finals.push(r),id:()=>String(++n)});a.receive({inputTranscription:{text:'We have not approved it.'}});a.receive({interimInputTranscription:{text:'unfinished'}});a.flush();a.flush();assert.equal(finals.length,2);assert.equal(finals[0].sourcePending,false);assert.equal(finals[1].sourcePending,true);a.dispose();a.receive({inputTranscription:{text:'late'}});assert.equal(finals.length,2);});
 test('finalized chunks inside a negation remain together until the sentence finishes',()=>{const finals=[];const a=createStreamingTranscript({onUpdate:()=>{},onFinal:r=>finals.push(r)});a.receive({inputTranscription:{text:'We have not promised'}});assert.equal(finals.length,0);a.receive({interimInputTranscription:{text:'to sign the agreement'}});a.receive({inputTranscription:{text:'to sign the agreement this week. We also have not agreed to'}});assert.equal(finals[0].original,'We have not promised to sign the agreement this week.');a.receive({inputTranscription:{text:'automatic renewal.'}});assert.equal(finals[1].original,'We also have not agreed to automatic renewal.');a.dispose();});
@@ -33,7 +33,6 @@ test('hour of simulated ASR events keeps ordered segments through repeated inter
 });
 
 test('Korean acknowledgment after English starts a separate untranslated record within the same turn',async()=>{
- const {englishForTranslation}=await import('../src/streaming-transcript.mjs');
  const rows=[];
  const stream=createStreamingTranscript({onUpdate:()=>{},onFinal:r=>rows.push(r)});
  stream.receive({inputTranscription:{text:'Sounds good'}});
@@ -42,6 +41,24 @@ test('Korean acknowledgment after English starts a separate untranslated record 
  assert.deepEqual(rows.map(r=>[r.original,r.language]),[['Sounds good','en-US'],['네','ko-KR']]);
  assert.equal(rows[0].turnId,rows[1].turnId);
  assert.equal(englishForTranslation(rows[1].original,rows[1].language),'');
+});
+
+test('English passages in bilingual speech retain the entire signed or qualified amount', () => {
+ const examples = [
+   '-15% is our floor, not +15%.',
+   '$1.25 million is the maximum.',
+   '≤ .5% is acceptable.',
+   '($200) is a loss.',
+   '− € 200 was the change.',
+ ];
+ for (const phrase of examples) {
+   for (const language of ['en-US', 'ko-KR']) {
+     assert.equal(englishForTranslation('네. ' + phrase + ' 확인했습니다.', language), phrase);
+   }
+ }
+ assert.equal(englishForTranslation('네. $25로 진행해 주세요.', 'ko-KR'), '');
+ assert.equal(englishForTranslation('네...5% is the limit.', 'en-US'), '5% is the limit.');
+ assert.equal(englishForTranslation('일정은 Project Alpha입니다.', 'ko-KR'), '');
 });
 
 test('foreign revisions retract a bilingual preview and never become final captions',()=>{

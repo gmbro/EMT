@@ -1,7 +1,8 @@
 class HabiAudioCapture extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.buffer = new Float32Array(2048);
+    // Deliver one 50 ms packet at the actual AudioContext rate.
+    this.buffer = new Float32Array(Math.max(1, Math.round(sampleRate / 20)));
     this.offset = 0;
     this.port.onmessage = ({ data }) => {
       if (data?.type === 'flush') {
@@ -13,7 +14,9 @@ class HabiAudioCapture extends AudioWorkletProcessor {
 
   flush() {
     if (!this.offset) return;
-    const samples = this.buffer.slice(0, this.offset);
+    const full = this.offset === this.buffer.length;
+    const samples = full ? this.buffer : this.buffer.slice(0, this.offset);
+    if (full) this.buffer = new Float32Array(samples.length);
     this.port.postMessage({ type: 'samples', samples }, [samples.buffer]);
     this.offset = 0;
   }
@@ -24,6 +27,17 @@ class HabiAudioCapture extends AudioWorkletProcessor {
     const channels = inputs[0];
     if (!channels?.length) return true;
     const frames = channels[0].length;
+    if (channels.length === 1) {
+      const input = channels[0];
+      for (let start = 0; start < frames;) {
+        const count = Math.min(frames - start, this.buffer.length - this.offset);
+        this.buffer.set(input.subarray(start, start + count), this.offset);
+        this.offset += count;
+        start += count;
+        if (this.offset === this.buffer.length) this.flush();
+      }
+      return true;
+    }
     for (let i = 0; i < frames; i++) {
       let mono = 0;
       for (const channel of channels) mono += channel[i];

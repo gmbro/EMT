@@ -11,6 +11,8 @@ import { translationChunks } from './translation-chunks.mjs';
 import { prepareCloudTranslation, translateCloud } from './cloud-translation.mjs';
 
 const opposite = language => language === 'ko-KR' ? 'en-US' : 'ko-KR';
+const cloudKey = (text, language, options) => JSON.stringify([text, language, options.context || '', options.glossary || '', options.task || 'translate']);
+const cloudChunks = text => translationChunks(text, 1200, 1800);
 
 export class MeetingEngine {
   constructor({ translationMode = 'cloud' } = {}) { this.translationMode = translationMode; this.resultCache = new Map(); this.sharedTranslations = createSharedTranslations(); this.cacheEpoch = 0; this.controller = new AbortController(); this.nativeTranslators = new Map(); this.translationKinds = new Map(); this.translationPreparing = new Map(); this.destroyed = false; }
@@ -19,9 +21,10 @@ export class MeetingEngine {
   get client() { return this.modelClient ||= new ModelClient(); }
   // Recognition must never sit behind a long translation in one worker queue.
   get translationClient() { return this.mtClient ||= new ModelClient(); }
-  async prepare(language, { speechProvider='google', source = 'microphone', portable = false, speechProfile = 'fast', translationEnabled = true, onProgress, onStatus } = {}) {
+  async prepare(language, { speechProvider='google', source = 'microphone', portable = false, speechProfile = 'fast', translationEnabled = true, verifyTranslation = true, onProgress, onStatus } = {}) {
     if (this.cloudSpeech) {
-      const translation = translationEnabled ? await this.prepareTranslation(language, { onProgress, onStatus }) : '받아쓰기 전용';
+      let translation = '받아쓰기 전용';
+      if (translationEnabled) translation = verifyTranslation ? await this.prepareTranslation(language, { onProgress, onStatus }) : 'Google Gemini';
       this.language = language;
       return { speech: LOCAL_QWEN ? 'Qwen3-ASR 1.7B · 이 컴퓨터' : speechProvider==='deepgram' ? 'Deepgram Nova-3 · 자동 화자 분리' : 'Google Gemini Live Transcribe', translation, cloudSpeech: true, notice: '' };
     }
@@ -92,7 +95,7 @@ export class MeetingEngine {
   }
   clearCloudCache() { this.cacheEpoch++; this.resultCache.clear(); this.sharedTranslations.clear(); }
   async cloudChunk(text, language, options = {}) {
-    const key = JSON.stringify([text,language,options.context||'',options.glossary||'',options.task||'translate']);
+    const key = cloudKey(text, language, options);
     const cached=this.resultCache.get(key), epoch=this.cacheEpoch;
     if(this.destroyed||options.signal?.aborted)throw Object.assign(new Error('취소됨'),{name:'AbortError',code:'CANCELLED'});
     if(cached){options.onText?.(cached.text);return {...cached,reused:true};}
@@ -115,15 +118,10 @@ export class MeetingEngine {
     return translateNative(translator, text, { onText, signal, timeoutMs: 4000 });
   }
   async translate(text, language, callbacks = {}) {
-    await this.prepareTranslation(language, callbacks);
     if (this.translationMode === 'cloud') {
       const started = performance.now(), completed = [];
       let details;
-      const sentences=sentenceChunks(text).flatMap(part=>translationChunks(part,1200));
-      const reusable=sentences.some(part=>this.resultCache.has(JSON.stringify([part,language,callbacks.context||'',callbacks.glossary||'',callbacks.task||'translate'])));
-      // Split finals only when that actually reuses an existing preview.
-      // Otherwise one request is cheaper and retains whole-message context.
-      for (const chunk of reusable?sentences:translationChunks(text,1200)) {
+      for (const chunk of this.cloudParts(text, language, callbacks)) {
         if (!chunk.trim()) continue;
         details = await this.cloudChunk(chunk, language, { ...callbacks, signal: callbacks.signal || this.controller.signal,
           onText: draft => callbacks.onText?.([...completed, draft].join('\n')) });
@@ -131,6 +129,7 @@ export class MeetingEngine {
       }
       return { ...details, text: completed.join('\n'), milliseconds: Math.round(performance.now() - started) };
     }
+    await this.prepareTranslation(language, callbacks);
     const native = this.nativeTranslators.get(language);
     const started = performance.now();
     const completed = [];
@@ -144,6 +143,26 @@ export class MeetingEngine {
       completed.push(output.trim());
     }
     return { text: completed.join('\n'), milliseconds: Math.round(performance.now() - started) };
+  }
+  cloudParts(text, language, options) {
+    const cached = part => this.resultCache.has(cloudKey(part, language, options));
+    if (!this.resultCache.size || cached(text)) return cloudChunks(text);
+    const parts = [];
+    let cursor = 0, unsent = 0;
+    for (const sentence of sentenceChunks(text)) {
+      cursor = text.indexOf(sentence, cursor);
+      for (const part of cloudChunks(sentence)) {
+        if (cached(part)) {
+          parts.push(...cloudChunks(text.slice(unsent, cursor).trim()), part);
+          unsent = cursor + part.length;
+        }
+        cursor += part.length;
+      }
+    }
+    if (!parts.length) return cloudChunks(text);
+    // Keep adjacent uncached sentences in the same request so their qualifiers
+    // and pronouns remain available to the translator. Preserve internal whitespace.
+    return parts.concat(cloudChunks(text.slice(unsent).trim()));
   }
   get canSuggest() { return this.translationMode === 'cloud' || Boolean(window.LanguageModel?.availability && window.LanguageModel?.create); }
   async suggest(context, mode, callbacks) {

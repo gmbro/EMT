@@ -55,3 +55,40 @@ test('an empty initial view does not make the first arriving large archive mount
  const groups=Array.from({length:1000},(_,i)=>({rows:[row(String(i))]}));
  assert.equal(transcriptMountWindow(groups,empty,'all').start,920);
 });
+
+test('streaming appends merge into the open paragraph but preserve sealed groups', () => {
+  const view = createTranscriptView();
+  const sealed = row('sealed', { translationBatch: true });
+  const first = row('first'), last = row('last');
+  const before = view([sealed, first]);
+  const after = view([sealed, first, last]);
+  assert.equal(after[0], before[0]);
+  assert.deepEqual(after[1].rows, [first, last]);
+  assert.deepEqual(before[1].rows, [first]);
+});
+
+test('middle edits, removal and reordering produce the same groups as a fresh view', () => {
+  const view = createTranscriptView();
+  const a = row('a'), b = row('b'), c = row('c', { language: 'ko-KR' }), d = row('d', { translationBatch: true });
+  const baseline = view([a, b, c, d]);
+  const changes = [
+    [a, b, { ...c, language: 'en-US' }, d],
+    [a, { ...b, translationBatch: true }, c, d],
+    [c, d, b, a], [b], [], [a, b, d], [a, b],
+  ];
+  for (const records of changes) {
+    const current = view(records);
+    assert.deepEqual(current, createTranscriptView()(records));
+    if (records.includes(d)) assert.equal(current.find(g => g.rows[0] === d), baseline.at(-1));
+  }
+});
+
+test('cached active search refreshes on live revisions and changing speaker boundaries', () => {
+  const a = row('a', { speakerId: 'A' }), b = row('b', { speakerId: 'B', translation: '회의' });
+  const view = createTranscriptView(), records = [a, b];
+  assert.deepEqual(view(records, { search: '회의' })[0].rows, records);
+  assert.deepEqual(view(records, { detected: true, search: '회의' })[0].rows, [b]);
+  const updated = [a, { ...b, translation: '승인' }];
+  assert.deepEqual(view(updated, { detected: true, search: '회의' }), []);
+  assert.deepEqual(view(updated, { detected: true, search: '승인' })[0].rows, [updated[1]]);
+});

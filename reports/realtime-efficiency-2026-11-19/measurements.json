@@ -1,0 +1,57 @@
+{
+  "baseline": "bdadb87",
+  "conditions": "Local Node v24.19.0 synthetic data. Duration values are medians unless noted.",
+  "view": {
+    "records": 10000,
+    "rounds": 9,
+    "updatesPerRound": 40,
+    "tailUpdateBeforeMs": 1.2303,
+    "tailUpdateAfterMs": 0.0831,
+    "searchActiveBeforeMs": 1.9675,
+    "searchActiveAfterMs": 0.4396
+  },
+  "context": {
+    "records": 10000,
+    "numberOfRepeatedCalls": 36,
+    "beforeMs": 12.96,
+    "afterMs": 2.72,
+    "firstColdCallBeforeMs": 16.1,
+    "firstColdCallAfterMs": 18.1
+  },
+  "audioCapture": {
+    "method": "Actual worklet and resampler code in VM; 128 sample render quanta up to first 800 samples ready for provider.",
+    "firstPacketMsAt16000": [
+      128,
+      56
+    ],
+    "firstPacketMsAt44100": [
+      92.88,
+      52.245
+    ],
+    "firstPacketMsAt48000": [
+      85.333,
+      50.667
+    ]
+  },
+  "browser": {
+    "input": "public/samples/en.wav",
+    "localDevServerWithRealGoogle": true,
+    "speechProvider": "Google",
+    "source": "Could you send me the meeting agenda by tomorrow?",
+    "translation": "내일까지 회의 안건을 보내주시겠어요?",
+    "captureToFirstOriginalMs": 2140,
+    "translationRequestToFirstMs": 1353,
+    "translationRequestToCompletionMs": 1451,
+    "captureToFirstTranslationDomMs": 6119,
+    "concurrentTypedSpeechCompleted": true,
+    "recommendations": 2,
+    "physicalMicrophone": false
+  },
+  "requestAccounting": {
+    "requests": 2000,
+    "rounds": 9,
+    "updatesPerRound": 200,
+    "medianBeforeMs": 0.4301,
+    "medianAfterMs": 0.0024
+  }
+}

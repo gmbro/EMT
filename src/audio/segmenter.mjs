@@ -5,6 +5,27 @@ function rms(samples) {
   return Math.sqrt(energy / samples.length);
 }
 
+// Streaming speech providers already segment the audio. Only measure input
+// activity on that path, with the same 20 ms windows as local recognition.
+export function createInputLevelMeter(onLevel, sampleRate = 16000) {
+  const window = Math.max(1, Math.round(sampleRate * 0.02));
+  let sum = 0, count = 0;
+  function emit() {
+    if (count) onLevel(Math.sqrt(sum / count));
+    sum = 0;
+    count = 0;
+  }
+  return {
+    push(samples) {
+      for (let i = 0; i < samples.length; i++) {
+        sum += samples[i] * samples[i];
+        if (++count === window) emit();
+      }
+    },
+    flush() { emit(); onLevel(0); },
+  };
+}
+
 function join(pieces, length) {
   const result = new Float32Array(length);
   let offset = 0;

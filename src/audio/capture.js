@@ -1,12 +1,12 @@
 import {withDeadline} from '../deadline.mjs';
 import { StreamingResampler } from './pcm.mjs';
-import { SpeechSegmenter } from './segmenter.mjs';
+import { createInputLevelMeter, SpeechSegmenter } from './segmenter.mjs';
 import captureWorkletUrl from './capture.worklet.js?worker&url';
 
 /** Starts local PCM capture from an already-authorized MediaStream.
  * Caller supplies getUserMedia/getDisplayMedia; no browser recognition service
  * or network endpoint is used. stop() owns stream tracks by default. */
-export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, onLevel, onError = () => {}, onInputStatus = () => {}, onEnded, audioBuffer, audioContext, ...segmentOptions } = {}) {
+export async function createAudioCapture(stream, { onSegment, onPCM, onLevel, onError = () => {}, onInputStatus = () => {}, onEnded, audioBuffer, audioContext, ...segmentOptions } = {}) {
   const Context = window.AudioContext || window.webkitAudioContext;
   if (!Context || !window.AudioWorkletNode) {
     for (const track of stream?.getTracks() || []) track.stop();
@@ -28,7 +28,9 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
   let stopPromise;
   let finished = false;
   let flushResolve;
-  const segmenter = new SpeechSegmenter({ ...segmentOptions, sampleRate: 16000, onSegment, onLevel });
+  const monitor = onSegment || segmentOptions.onPreview
+    ? new SpeechSegmenter({ ...segmentOptions, sampleRate: 16000, onSegment, onLevel })
+    : onLevel && createInputLevelMeter(onLevel);
   const resampler = new StreamingResampler(context.sampleRate, 16000);
   const audioTracks = stream?.getAudioTracks() || [];
   let finishPlayback;
@@ -59,8 +61,8 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
       }
       finished = true;
       if (flush) {
-        const tail = resampler.flush(); onPCM?.(tail); segmenter.push(tail);
-        segmenter.flush();
+        const tail = resampler.flush(); onPCM?.(tail); monitor?.push(tail);
+        monitor?.flush();
       }
       if (worklet) {
         worklet.port.onmessage = null;
@@ -85,7 +87,7 @@ export async function createAudioCapture(stream, { onSegment = () => {}, onPCM, 
       try {
         const pcm = resampler.push(samples);
         onPCM?.(pcm);
-        segmenter.push(pcm);
+        monitor?.push(pcm);
       } catch (error) { onError(error); }
     };
     if (audioBuffer) {
