@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "commonCases": 8,
+  "buildId": "62e0c6419022",
+  "firstTokenMedianBeforeMs": 1802.0,
+  "firstTokenMedianAfterMs": 975.5,
+  "completeMedianBeforeMs": 2086.0,
+  "completeMedianAfterMs": 1139.5,
+  "firstTokenAfterRangeMs": [
+    488,
+    1369
+  ],
+  "firstTokenReductionPercent": 45.9
+}

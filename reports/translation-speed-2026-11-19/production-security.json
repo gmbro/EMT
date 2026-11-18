@@ -1,0 +1,38 @@
+{
+  "buildId": "62e0c6419022",
+  "checkedAt": "2026-11-18T15:58:17.842Z",
+  "denied": [
+    {
+      "path": "/.env.local",
+      "status": 404
+    },
+    {
+      "path": "/tests/meeting-browser.html",
+      "status": 404
+    },
+    {
+      "path": "/reports/translation-speed-2026-11-19/models-final.json",
+      "status": 404
+    },
+    {
+      "path": "/api/qwen",
+      "status": 404
+    }
+  ],
+  "healthStatus": 200,
+  "health": {
+    "ready": true,
+    "model": "gemini-3.5-flash-lite",
+    "replyModel": "gemini-3.8-flash",
+    "audio": "Google Gemini Live Transcribe",
+    "translation": "Google Gemini",
+    "store": false
+  },
+  "foreign-origin": 403,
+  "client-model": 400,
+  "securityHeaders": {
+    "nosniff": "nosniff",
+    "frame": "DENY",
+    "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' wss://generativelanguage.googleapis.com wss://api.deepgram.com; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+  }
+}

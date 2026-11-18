@@ -1,0 +1,37 @@
+{
+  "origin": "https://emt-theta.vercel.app",
+  "label": "after-long",
+  "checkedAt": "2026-11-18T15:58:11.398Z",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "en-long-meeting-paragraph",
+      "language": "en-US",
+      "context": "A synthetic business meeting about implementation conditions.",
+      "glossary": "security review = 보안 검토; contract deposit = 계약금",
+      "text": "Before we discuss the implementation schedule, I want to make sure we are clear about the conditions. We have not approved the contract, and we have not promised to start work next Monday. The proposed price is 125,000 US dollars, excluding tax, and the contract deposit is 25,000 dollars rather than 250,000 dollars. Security review must be completed before any implementation date can be confirmed. The six-week schedule is an estimate only, and it does not include an additional three days that testing may require. Please send the updated proposal by tomorrow, with the assumptions and exclusions clearly listed. We also need to know whether the vendor can support 100 users in the pilot and whether access can be revoked immediately when someone leaves the project. If these conditions change, the estimate will need to be reviewed again. This does not mean that we have approved a revised price or committed to a deadline. Could you clarify which team is responsible for each review and whether the current estimate includes the required security checks?"
+    }
+  ],
+  "rows": [
+    {
+      "id": "en-long-meeting-paragraph",
+      "firstTokenMs": 1416,
+      "totalMs": 2132,
+      "complete": true,
+      "text": "구현 일정을 논의하기 전에, 조건들을 확실히 해두고 싶습니다. 저희는 계약을 승인한 적이 없고, 다음 주 월요일에 작업을 시작하겠다고 약속한 적도 없습니다. 제안된 가격은 세금을 제외하고 125,000 미 달러이며, 계약금은 250,000 달러가 아니라 25,000 달러입니다. 보안 검토는 어떤 구현 날짜든 확정되기 전에 반드시 완료되어야 합니다. 6주 일정은 예상치일 뿐이며, 테스트에 필요할 수 있는 추가 3일은 포함되어 있지 않습니다. 전제 조건과 제외 사항이 명확히 기재된 업데이트된 제안서를 내일까지 보내주시기 바랍니다. 또한 벤더가 파일럿에서 100명의 사용자를 지원할 수 있는지, 그리고 프로젝트를 떠날 때 접근 권한을 즉시 취소할 수 있는지도 알아야 합니다. 이러한 조건이 변경되면 예상 견적을 다시 검토해야 합니다. 그렇다고 해서 저희가 수정된 가격을 승인했거나 마감일에 확답을 주었다는 뜻은 아닙니다. 각 검토에 대한 책임이 어느 팀에 있는지, 그리고 현재 예상 견적에 필수 보안 검토가 포함되어 있는지 명확히 해 주시겠습니까?",
+      "metadata": {
+        "type": "done",
+        "model": "gemini-3.5-flash-lite",
+        "usage": {
+          "total_input_tokens": 425,
+          "total_output_tokens": 285,
+          "total_thought_tokens": 0,
+          "total_cached_tokens": 0,
+          "total_tokens": 710
+        },
+        "milliseconds": 1815,
+        "firstTokenMs": 1010
+      }
+    }
+  ]
+}

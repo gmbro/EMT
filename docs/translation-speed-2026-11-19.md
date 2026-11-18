@@ -25,3 +25,11 @@
 단일 네트워크·시점의 합성 음원/텍스트 측정이다. 네트워크·서버 부하·문장 길이에 따라 달라진다. 상시 1초 이하나 발화 시작→번역 1초를 보장하지 않는다. 실제 현장 마이크, 소음 환경, 물리 모바일 기기에서의 성능을 이번 결과로 주장하지 않는다. 모델은 Google 내에서만 교체하며 다른 공급자로 회의 데이터를 보내지 않는다.
 
 공식 근거: [Flash-Lite 모델](https://aistudio.google.com/docs/models/gemini-3.5-flash-lite), [모델별 thinking level](https://aistudio.google.com/docs/thinking#thinking-levels), [stateless Interactions](https://aistudio.google.com/docs/interactions-overview#data-storage-retention).
+
+## 배포 후 공개 API 검증
+
+- 빌드 `62e0c6419022`, 번역 `gemini-3.5-flash-lite`, 답변 가이드 `gemini-3.8-flash`. 배포 소스 해시가 로컬 검증 소스와 일치하며 Vercel이 정규화한 vercel.json만 다르다.
+- 같은 입력 8건에서 요청→첫 텍스트 중앙값 **1,802ms → 975.5ms (45.9% 감소)**, 완료 중앙값 **2,086ms → 1,139.5ms**. 개선 후 첫 텍스트 범위 488~1,369ms. 추가 기한 사례까지 9건 모두 완료. 이는 1회씩의 작은 합성 표본이며 상시 성능이나 모든 회의 품질을 보장하지 않는다.
+- 긴 합성 문단: 첫 텍스트 1,944ms → 1,416ms, 완료 4,218ms → 2,132ms. 다른 시간대 실행이므로 모델과 서버·네트워크 영향을 분리하지 않는다.
+- 최종 공개 API 출력의 부정·금액·단위·기한·조건·계약금 구분을 수동 검토했다. 9건 및 긴 문단에서 의미 오류를 발견하지 못했다.
+- 준비 API가 빠른 번역 모델을 실제 반환한다. 환경 파일·개발 테스트·측정 보고서·로컬 Qwen 경로 404, 외부 출처 요청 403, 임의 모델 지정 400, 보안 헤더 유지 확인. 키가 번들에 포함되지 않았음을 비공개 값 비교로 확인했다.
