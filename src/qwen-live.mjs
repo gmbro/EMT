@@ -1,7 +1,7 @@
 import {readSSE} from './sse.mjs';
 import {detectCaptionLanguage} from './meeting-archive.mjs';
 export const LOCAL_QWEN = typeof __LOCAL_QWEN__!=='undefined' && __LOCAL_QWEN__;
-export async function createQwenLive({onUpdate,onFinal,onError,signal,language='auto',fetchImpl=fetch}){
+export async function createQwenLive({onUpdate,onFinal,onTurnComplete,onError,signal,language='auto',fetchImpl=fetch}){
  const health=await fetchImpl('/api/qwen',{signal});const state=await health.json();
  if(!health.ok||!state.ready)throw new Error(state.error||'Qwen 모델을 준비하지 못했어요.');
  let frames=[],length=0,quiet=0,voiced=false,record=null,busy=false,closed=false,stopping=false,pending=[],previewAt=0;
@@ -34,7 +34,7 @@ export async function createQwenLive({onUpdate,onFinal,onError,signal,language='
    if(!done)throw new Error('Qwen 응답이 끝까지 도착하지 않았어요.');
    if(!closed&&text.trim()){
     const result={...task.record,original:text.trim(),language:language==='auto'?detectCaptionLanguage(text):language,sourcePending:!task.final};
-    if(task.final){onUpdate(result);onFinal(result);displayed.delete(task.record.id);}else emit();
+    if(task.final){onUpdate(result);onFinal(result);displayed.delete(task.record.id);if(!pending.length&&!voiced)onTurnComplete?.();}else emit();
    }
   }catch(error){if(!closed)failure(error);}finally{busy=false;void drain();}
  }

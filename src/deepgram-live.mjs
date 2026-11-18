@@ -23,7 +23,7 @@ export function speakerSegments(alternative,language) {
   return groups;
 }
 
-export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onStatus,signal,language='auto',diarize=false,allocateSpeaker,Socket=WebSocket}) {
+export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onTurnComplete,onError,onStatus,signal,language='auto',diarize=false,allocateSpeaker,Socket=WebSocket}) {
   const health=createSpeechHealth();
   let socket,provisional,closed=false,stopping=false,ready=false,retries=[],labels=new Map();
   let backlog=[],seen=new Set(),finish,watchdog,recovery,timedOut=false;
@@ -45,6 +45,7 @@ export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onS
     if(closed)return;
     let result;
     try {result=JSON.parse(event.data);}catch{return;}
+    if(result.type==='UtteranceEnd'){onTurnComplete?.();return;}
     if(result.type!=='Results')return;
     const alt=result.channel?.alternatives?.[0];
     if(!alt)return;
@@ -61,10 +62,12 @@ export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onS
     if (!groups.length) {
       if (provisional) onDiscard?.(provisional.id);
       provisional=null;
+      if(result.is_final&&result.speech_final)onTurnComplete?.();
       return;
     }
     if (result.is_final) {
       for(const group of groups)publish(group,false);
+      if(result.speech_final)onTurnComplete?.();
     }else{
       publish(groups[0],true);
     }
@@ -130,7 +133,7 @@ export async function createDeepgramLive({onUpdate,onFinal,onDiscard,onError,onS
     if(action==='finalize'){timedOut=true;onStatus('음성 입력이 있지만 받아쓰기가 지연됩니다.');socket.send(JSON.stringify({type:'Finalize'}));}
     if(action==='recover')socket.close();
   },1000);
-  return {push(samples){if(!closed&&!stopping)framer.push(samples);},async stop({flush=true}={}){
+  return {finalize(){if(!closed&&!stopping&&ready&&socket.readyState===1)socket.send(JSON.stringify({type:'Finalize'}));},push(samples){if(!closed&&!stopping)framer.push(samples);},async stop({flush=true}={}){
     if(closed)return;
     stopping=true;
     try{if(flush&&ready&&socket.readyState===1){

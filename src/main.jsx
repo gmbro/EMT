@@ -113,7 +113,7 @@ function LiveTranscript({meeting,mode,size,copy,edit,search,onEnableTranslation}
    const result=[];
    for(const row of visible){
      const last=result.at(-1);
-     if(last && last.rows[0].language===row.language && (!detected || last.speaker===(row.speakerId||'')))last.rows.push(row);
+     if(last && !last.rows[0].translationBatch && !row.translationBatch && last.rows[0].language===row.language && (!detected || last.speaker===(row.speakerId||'')))last.rows.push(row);
      else result.push({speaker:row.speakerId||'',rows:[row]});
    }
    const term=search.toLowerCase();
@@ -121,7 +121,9 @@ function LiveTranscript({meeting,mode,size,copy,edit,search,onEnableTranslation}
  },[visible,search,detected]);
  useLayoutEffect(()=>{if(follow&&area.current)area.current.scrollTop=area.current.scrollHeight;},[groups,follow,size]);
  return <section className="live-sheet turn-sheet" aria-label="실시간 회의 기록">
- <header className="turn-heading"><strong>실시간 회의 기록</strong>{(detected||speakers.length>0)&&<label>표시할 화자 <select aria-label="표시할 화자" value={focused} onChange={e=>focusSpeaker(e.target.value)}><option value="">전체 화자</option>{Array.from(new Set([...speakers,...(focused?[focused]:[])])).map(id=><option key={id} value={id}>화자 {id}만</option>)}</select></label>}<div>{mode==='transcript'&&<button onClick={onEnableTranslation}>번역 켜기</button>}<button onClick={()=>copy(visible.map(r=>r.original).join('\n'))}>원문 복사</button><button onClick={()=>copy(visible.map(r=>r.translation).filter(Boolean).join('\n'))}>번역 복사</button></div></header>
+ <header className="turn-heading"><strong>실시간 회의 기록</strong><div className="translation-pacing" role="group" aria-label="번역 단위">
+ {[["paragraph","문단 나누기"],["after-speech","다 말하고 번역하기"]].map(([value,label])=><button type="button" key={value} aria-pressed={meeting.translationPacing===value} onClick={()=>meeting.changeTranslationPacing(value)}>{label}</button>)}
+ <small role="status">{mode==='transcript'?'번역을 켜면 적용됩니다':meeting.translationPacing==='after-speech'?'3초간 말이 없으면 번역':detected?'화자별 1문장 · 25초 기준':'기본 3문장 · 25초 기준'}</small></div>{(detected||speakers.length>0)&&<label>표시할 화자 <select aria-label="표시할 화자" value={focused} onChange={e=>focusSpeaker(e.target.value)}><option value="">전체 화자</option>{Array.from(new Set([...speakers,...(focused?[focused]:[])])).map(id=><option key={id} value={id}>화자 {id}만</option>)}</select></label>}<div>{mode==='transcript'&&<button onClick={onEnableTranslation}>번역 켜기</button>}<button onClick={()=>copy(visible.map(r=>r.original).join('\n'))}>원문 복사</button><button onClick={()=>copy(visible.map(r=>r.translation).filter(Boolean).join('\n'))}>번역 복사</button></div></header>
  <div className="turn-scroll" ref={area} role="region" aria-label="누적 원문과 번역" tabIndex={0} onScroll={e=>{
    const el=e.currentTarget, near=el.scrollHeight-el.scrollTop-el.clientHeight<32;
    if(follow&&!near)baseline.current=meeting.records;

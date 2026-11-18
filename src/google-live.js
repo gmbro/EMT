@@ -4,7 +4,7 @@ import { createStreamingTranscript } from './streaming-transcript.mjs';
 import { createPCMFramer, pcm16Base64 } from './live-captions.mjs';
 const WS_ENDPOINT='wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sample=false,signal,fetchImpl=fetch,Socket=WebSocket,language='auto',vocabulary=[],rotateAfterMs=480000,onStatus=()=>{},now=()=>performance.now(),scheduleWatch=setInterval,cancelWatch=clearInterval}) {
+export async function createGoogleLive({onUpdate,onFinal,onDiscard,onTurnComplete,onError,sample=false,signal,fetchImpl=fetch,Socket=WebSocket,language='auto',vocabulary=[],rotateAfterMs=480000,onStatus=()=>{},now=()=>performance.now(),scheduleWatch=setInterval,cancelWatch=clearInterval}) {
   const channels=[], setupCancels=new Set(),preRoll=[];
   const health=createSpeechHealth({now}), metricId=crypto.randomUUID();
   let capturedSamples=0,sentSamples=0,reconnections=0,usageReports=0;
@@ -40,7 +40,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
           if(message.error){setupFailure();return;}
           if(message.sessionResumptionUpdate){const u=message.sessionResumptionUpdate;channel.canResume=Boolean(u.resumable&&u.newHandle);if(channel.canResume)channel.resumeHandle=u.newHandle;if(channel.renewRequested&&channel.canResume)void renew(channel);}
           if(message.usageMetadata){usageReports++;report();}
-          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.turnComplete){channel.assembler.flush();health.response();if(delayed){delayed=false;onStatus('');}}}
+          if(message.serverContent){const c=message.serverContent;if(c.inputTranscription?.text||c.interimInputTranscription?.text||c.outputTranscription?.text){lastText=now();health.response();if(delayed){delayed=false;onStatus('');}}channel.assembler.receive(c);if(c.inputTranscription?.finished){channel.assembler.flush();onTurnComplete?.();}if(c.turnComplete){channel.assembler.flush();onTurnComplete?.();health.response();if(delayed){delayed=false;onStatus('');}}}
           if(message.goAway){channel.renewRequested=true;const ms=Math.max(1000,(parseFloat(message.goAway.timeLeft)||20)*1000-2000);clearTimeout(channel.renewTimer);channel.renewTimer=setTimeout(()=>void renew(channel,!channel.canResume),ms);if(channel.canResume)void renew(channel);else if(channel.assembler.idle)void renew(channel,true);}
         }catch{setupFailure();}
       });
@@ -96,7 +96,7 @@ export async function createGoogleLive({onUpdate,onFinal,onDiscard,onError,sampl
     if(action==='finalize'){delayed=true;onStatus('받아쓰기 응답을 기다리고 있어요. 음성 연결을 확인하고 있습니다.');}
     if(action==='recover')for(const channel of channels)void renew(channel,!channel.canResume);
   },1000);
-  return {push:samples=>framer.push(samples),async stop({flush=true}={}){
+  return {push:samples=>framer.push(samples),finalize(){if(!closed&&!finishing)endAudio();},async stop({flush=true}={}){
     if(stopTask)return stopTask;if(closed)return;
     stopTask=(async()=>{finishing=true;cancelWatch(watchdog);framer.flush();
       if(flush){endAudio();await pause(700);for(let n=0;n<18&&channels.some(c=>!c.assembler.idle)&&!closed;n++)await pause(100);for(const c of channels)c.assembler.flush();}

@@ -1,0 +1,25 @@
+합성 영어 3회 연속 발화 · 실제 API 검증
+문단 나누기다 말하고 번역하기
+준비연속 영어 음원 검증
+
+준비 완료 · paragraph · 대기 0
+
+번역 요청
+[
+  {
+    "task": "translate",
+    "text": "Could you send me the meeting agenda by tomorrow? Could you send me the meeting agenda by tomorrow? Could you send me the meeting agenda by tomorrow?",
+    "atMs": 9174
+  }
+]
+실시간 원문과 번역
+[
+  {
+    "id": "2cea9ce5-ebdd-44fa-9a8d-1fa177caa612",
+    "original": "Could you send me the meeting agenda by tomorrow? Could you send me the meeting agenda by tomorrow? Could you send me the meeting agenda by tomorrow?",
+    "translation": "내일까지 회의 안건을 보내주실 수 있나요? 내일까지 회의 안건을 보내주실 수 있나요? 내일까지 회의 안건을 보내주실 수 있나요?",
+    "status": "complete",
+    "sourcePending": false,
+    "translationPacing": "paragraph"
+  }
+]

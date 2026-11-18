@@ -1,3 +1,4 @@
+import { createTranslationGroups, TRANSLATION_PACING } from './translation-groups.mjs';
 import {createDeepgramLive} from './deepgram-live.mjs';
 import {englishForTranslation} from './streaming-transcript.mjs';
 import {createQwenLive,LOCAL_QWEN} from './qwen-live.mjs';
@@ -53,6 +54,19 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     return ()=>{mounted=false;clearTimeout(timer);controller.abort();};
   },[]);
   const displayOptions=useRef({transcribeOnly,guidesEnabled});displayOptions.current={transcribeOnly,guidesEnabled};
+  const [translationPacing, setTranslationPacing] = useState(() => {
+    try { const saved = localStorage.getItem('emt-translation-pacing'); return TRANSLATION_PACING.includes(saved) ? saved : 'paragraph'; }
+    catch { return 'paragraph'; }
+  });
+  const translationPacingRef = useRef(translationPacing);
+  const liveGrouping = useRef(null);
+  function changeTranslationPacing(value) {
+    if (!TRANSLATION_PACING.includes(value)) return;
+    translationPacingRef.current = value;
+    setTranslationPacing(value);
+    try { localStorage.setItem('emt-translation-pacing', value); } catch {}
+    liveGrouping.current?.setMode(value);
+  }
   const [language, setLanguage] = useState('en-US');
   const [draftLanguage, setDraftLanguage] = useState('en-US');
   const [source, setSource] = useState('microphone');
@@ -228,7 +242,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     mutateHistory(rows=>rows.map(row=>selected.has(row.id)?{...row,speakerId:value,speakerManual:true}:row));
   }
   function appendRecord(record) {
-    if(speakerRef.current)record={...record,speakerId:speakerRef.current,speakerManual:true};
+    if(speakerRef.current&&!record.mixedSpeakers)record={...record,speakerId:speakerRef.current,speakerManual:true};
     const current = historyRef.current, records = [...current.records];
     const index = records.findIndex(row => row.createdAt > record.createdAt);
     records.splice(index < 0 ? records.length : index, 0, record);
@@ -238,7 +252,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     const current = historyRef.current, index = current.records.findIndex(row => row.id === id);
     if (index < 0) return;
     const previous = current.records[index], record = { ...previous, ...update }, records = [...current.records];
-    if(previous.speakerManual){record.speakerId=previous.speakerId;record.speakerManual=true;}
+    if(previous.speakerManual&&!record.mixedSpeakers){record.speakerId=previous.speakerId;record.speakerManual=true;}
     records[index] = record;
     const delta = record.original === previous.original && record.translation === previous.translation ? 0 : captionLength(record) - captionLength(previous);
     publishHistory({ ...current, records, characterCount: current.characterCount + delta });
@@ -565,7 +579,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
   }
 
   function previewLive(record, currentEngine, session) {
-    if(displayOptions.current.transcribeOnly)return;
+    if(displayOptions.current.transcribeOnly || record.translationBatch)return;
     if(record.language!=='en-US'||!record.sourcePending||/[가-힣]/u.test(record.original)||!canStartPreview(record.original))return;
     livePreviewRunner.current ||= createLatestTaskRunner({delay:0,canRun:()=>translationJobs.current.size<2,
       run:async(task,emit)=>{
@@ -596,7 +610,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
       do {label=next<26?String.fromCharCode(65+next):String(next+1);next++;} while(used.has(label));
       used.add(label);return label;
     }
-    return (LOCAL_QWEN?createQwenLive:speechProvider==='deepgram'?createDeepgramLive:createGoogleLive)({allocateSpeaker,diarize:separateSpeakers,onStatus:message=>{if(session===epoch.current&&alive.current)setError(message);},language:inputLanguage==='en-US'&&!LOCAL_QWEN?'auto':inputLanguage,vocabulary:glossaryRef.current.split(/[\n=,]/).map(s=>s.trim()).filter(word=>word&&word.length<=80).slice(0,80),signal,
+    const handlers = {
         onDiscard: id => {
           if (session !== epoch.current || !alive.current) return;
           livePreviewRunner.current?.invalidate();
@@ -632,7 +646,47 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
           queueTranslation(record, currentEngine, session);
         },
         onError: failure => { if (session === epoch.current && alive.current) { setError(failure.message); mutateHistory(rows=>rows.map(row=>row.live && row.status!=='complete' && !translationJobs.current.has(row.id) ? {...row,status:'error',error:failure.message} : row)); void stopRef.current?.({ flush: false }); } },
+    };
+    let live;
+    const grouping = createTranslationGroups({
+      mode: translationPacingRef.current,
+      onUpdate: handlers.onUpdate,
+      onFinal: handlers.onFinal,
+      onDiscard: handlers.onDiscard,
+      requestFinalize: () => live?.finalize?.(),
     });
+    liveGrouping.current = grouping;
+    const provider = LOCAL_QWEN ? createQwenLive : speechProvider === 'deepgram' ? createDeepgramLive : createGoogleLive;
+    try {
+      live = await provider({
+        allocateSpeaker, diarize: separateSpeakers,
+        onStatus: message => { if(session===epoch.current&&alive.current)setError(message); },
+        language: inputLanguage==='en-US'&&!LOCAL_QWEN?'auto':inputLanguage,
+        vocabulary: glossaryRef.current.split(/[\n=,]/).map(word=>word.trim()).filter(word=>word&&word.length<=80).slice(0,80),
+        signal,
+        onUpdate: row => grouping.update(speakerRef.current ? {...row,speakerId:speakerRef.current,speakerManual:true} : row),
+        onFinal: row => grouping.final(speakerRef.current ? {...row,speakerId:speakerRef.current,speakerManual:true} : row),
+        onDiscard: rowId => grouping.discard(rowId),
+        onTurnComplete: () => grouping.sourceEnd(),
+        onError: handlers.onError,
+      });
+      return {
+        push(samples) { live.push(samples); grouping.audio(samples); },
+        async stop(options = {}) {
+          try {
+            await live.stop(options);
+            if(options.flush!==false)grouping.flush({includeDrafts:true});
+          } finally {
+            grouping.dispose();
+            if(liveGrouping.current===grouping)liveGrouping.current=null;
+          }
+        },
+      };
+    } catch(error) {
+      grouping.dispose();
+      if(liveGrouping.current===grouping)liveGrouping.current=null;
+      throw error;
+    }
   }
   async function createCloudCapture(stream, { audioBuffer, audioContext, sample = false } = {}) {
     const session = epoch.current, currentEngine = engine.current;
@@ -981,7 +1035,7 @@ export function useMeeting({transcribeOnly=false,guidesEnabled=true,typedDraft='
     finally { deletingSession.current = null; setSessionBusy(false); }
   }
 
-  return { finishRecording, hasUnsaved:hasWork, recovery, resolveRecovery, testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving:sessionBusy, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
+  return { translationPacing, changeTranslationPacing, finishRecording, hasUnsaved:hasWork, recovery, resolveRecovery, testOwnSample, usage, meetingPurpose, changeMeetingPurpose:text=>{setMeetingPurpose(text.slice(0,300));revision.current++;}, voiceSpeaking, voiceStarting, voiceError, startOwnVoice, stopOwnVoice, newReplies, acceptNewReplies, language, draftLanguage, source, portable, speechProfile, glossary, changeGlossary: text => {setGlossary(text.slice(0, 2000));revision.current++;}, sessions, activeSessionId: sessionMeta.current.id, activeSessionDate: sessionMeta.current.createdAt, sessionBusy, storageError, archiveLoading, saving:sessionBusy, speeches, composeBusy, newMeeting, openMeeting, deleteMeeting, preparing, ready, phase, progress, modelNames, error,
     listening, starting, stopping, level, elapsed, interim, partial, draftSample, records: history.records, characterCount: history.characterCount,
     charCount: history.characterCount, historyTrimmed: history.historyTrimmed, truncated: history.historyTrimmed > 0,
     pending, speechPending, translationPending, replies, replyBusy, replyError, canSuggest: ready && engine.current?.canSuggest,
